@@ -1,0 +1,3 @@
+# Cloudflare Pages SPA fallback: any path not matching a built asset is
+# served the Vite-rendered index.html so the React app can handle routing.
+/*    /index.html   200

@@ -3,6 +3,11 @@ main = "src/index.ts"
 compatibility_date = "2025-05-01"
 compatibility_flags = ["nodejs_compat"]
 
+# Cron worker is invoked only by the scheduled trigger below. No public URL
+# is needed, so we shut off the auto-generated workers.dev hostname.
+workers_dev = false
+preview_urls = false
+
 # Run every 5 minutes — Cloudflare's minimum scheduled granularity.
 [triggers]
 crons = ["*/5 * * * *"]
@@ -21,7 +26,7 @@ id = "b16a5a6cadce4bc99e22896d8a297ecf"
 enabled = true
 
 [vars]
-ENVIRONMENT = "development"
+ENVIRONMENT = "production"
 
 # Maximum number of blocks scanned per cron tick. Infura allows up to 10_000
 # in a single eth_getLogs call but we keep a much lower ceiling so a single

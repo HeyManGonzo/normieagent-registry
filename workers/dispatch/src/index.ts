@@ -92,12 +92,22 @@ async function proxyRequest(
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
-    const agentName = extractAgentName(url.hostname);
+    const host = url.hostname.toLowerCase();
 
-    // Apex, www, or unrelated host — let it fall through.
-    // In production the wildcard worker route only matches *.normieagent.com,
-    // so non-matching hosts won't actually reach this code. The early return
-    // is defensive for `wrangler dev` and preview URLs.
+    // The wildcard worker route `*.normieagent.com/*` also captures www,
+    // which is owned by the Gemel concierge site on Vercel. Re-issuing the
+    // request via fetch() bypasses the worker route (Cloudflare suppresses
+    // loops by routing same-URL refetches to the configured origin), so the
+    // request lands on the www DNS record (the Vercel CNAME) with the
+    // original Host header intact.
+    if (host === `www.${APEX_DOMAIN}`) {
+      return fetch(request);
+    }
+
+    const agentName = extractAgentName(host);
+
+    // Apex or unrelated host — should never actually hit this worker in
+    // production because the wildcard route doesn't match the apex.
     if (agentName === null) {
       return new Response("Not found", { status: 404 });
     }

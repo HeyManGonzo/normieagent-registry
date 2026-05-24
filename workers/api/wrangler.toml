@@ -3,9 +3,11 @@ main = "src/index.ts"
 compatibility_date = "2025-05-01"
 compatibility_flags = ["nodejs_compat"]
 
-# Production route — uncomment after the zone is connected.
+# The api worker is dormant while WALLET_FLOW_ENABLED is false in the
+# frontend. When self-serve registration is turned on, uncomment the route
+# below to expose POST /api/* under the registry domain.
 # [[routes]]
-# pattern = "app.normieagent.com/api/*"
+# pattern = "registry.normieagent.com/api/*"
 # zone_name = "normieagent.com"
 
 # Shared D1 + KV bindings — same database and namespace as the dispatch worker.
@@ -22,9 +24,9 @@ id = "b16a5a6cadce4bc99e22896d8a297ecf"
 enabled = true
 
 [vars]
-ENVIRONMENT = "development"
+ENVIRONMENT = "production"
 # Allowed origins for CORS. Comma-separated. Override per-environment.
-ALLOWED_ORIGINS = "http://localhost:5173,https://app.normieagent.com"
+ALLOWED_ORIGINS = "https://registry.normieagent.com"
 
 # INFURA_API_KEY is set via:
 #   wrangler secret put INFURA_API_KEY
