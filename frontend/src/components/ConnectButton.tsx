@@ -1,4 +1,5 @@
 import { useAccount, useConnect, useDisconnect } from "wagmi";
+import { WALLET_FLOW_ENABLED } from "../config.js";
 
 function shorten(addr: string): string {
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
@@ -8,6 +9,24 @@ export function ConnectButton() {
   const { address, isConnected } = useAccount();
   const { connectors, connect, isPending, error } = useConnect();
   const { disconnect } = useDisconnect();
+
+  // Launch mode: wallet flow is wired up end-to-end but kept dark while the
+  // operator handles registrations manually. Render a single disabled pill so
+  // the eventual self-serve UX is visible to visitors.
+  if (!WALLET_FLOW_ENABLED) {
+    return (
+      <div className="connect">
+        <button
+          className="btn"
+          type="button"
+          disabled
+          title="Self-serve registration coming soon"
+        >
+          Connect Wallet · Soon
+        </button>
+      </div>
+    );
+  }
 
   if (isConnected && address) {
     return (

@@ -216,14 +216,124 @@ code {
   word-break: break-all;
 }
 .compare-bad code {
-  text-decoration: line-through;
-  text-decoration-color: var(--err);
-  text-decoration-thickness: 1px;
   color: var(--muted);
 }
 .compare-good code {
   color: var(--fg);
   font-weight: 700;
+}
+
+/* ───── How to register ───── */
+.how {
+  max-width: 720px;
+  margin: 2.5rem 0 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--line);
+}
+.how-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+@media (max-width: 640px) {
+  .how-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.how-col {
+  background: var(--card);
+  border: 1px solid var(--line);
+  padding: 1rem 1.1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  font-size: 0.92rem;
+}
+.how-tag {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.2rem;
+}
+.how-now {
+  border-color: var(--fg);
+}
+.how-now .how-tag {
+  color: var(--fg);
+  font-weight: 700;
+}
+.how-col p {
+  margin: 0;
+  line-height: 1.5;
+}
+.how-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.how-cta-row {
+  margin-top: 0.4rem !important;
+}
+.how-cta-row .btn {
+  text-decoration: none;
+  display: inline-block;
+}
+.how-fineprint {
+  font-size: 0.8rem;
+  margin-top: 0.4rem !important;
+}
+
+/* ───── Infrastructure ───── */
+.infra {
+  max-width: 720px;
+  margin: 2.5rem 0 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--line);
+}
+.infra-lede {
+  margin: 0.75rem 0 1rem;
+  line-height: 1.55;
+  font-size: 0.95rem;
+}
+.infra-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+@media (max-width: 720px) {
+  .infra-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.infra-col {
+  background: var(--card);
+  border: 1px solid var(--line);
+  padding: 0.85rem 0.9rem 0.95rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+.infra-col p {
+  margin: 0;
+}
+.infra-tag {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--fg);
+  font-weight: 700;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.4rem;
 }
 
 /* ───── Connect ───── */

@@ -18,7 +18,8 @@
     "dev:frontend": "pnpm --filter @normieagent/frontend dev",
     "deploy:dispatch": "pnpm --filter @normieagent/dispatch deploy",
     "deploy:api": "pnpm --filter @normieagent/api deploy",
-    "deploy:cron": "pnpm --filter @normieagent/cron deploy"
+    "deploy:cron": "pnpm --filter @normieagent/cron deploy",
+    "admin": "node scripts/admin.mjs"
   },
   "devDependencies": {
     "typescript": "^5.6.3"
