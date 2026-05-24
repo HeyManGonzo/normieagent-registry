@@ -1,0 +1,26 @@
+{
+  "name": "normieagent",
+  "version": "0.0.1",
+  "private": true,
+  "description": "NormieAgent subdomain registry — Cloudflare Workers monorepo",
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "packageManager": "pnpm@10.10.0",
+  "scripts": {
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "dev:dispatch": "pnpm --filter @normieagent/dispatch dev",
+    "dev:api": "pnpm --filter @normieagent/api dev",
+    "dev:cron": "pnpm --filter @normieagent/cron dev",
+    "dev:frontend": "pnpm --filter @normieagent/frontend dev",
+    "deploy:dispatch": "pnpm --filter @normieagent/dispatch deploy",
+    "deploy:api": "pnpm --filter @normieagent/api deploy",
+    "deploy:cron": "pnpm --filter @normieagent/cron deploy"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}

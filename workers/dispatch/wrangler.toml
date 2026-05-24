@@ -1,0 +1,28 @@
+name = "normieagent-dispatch"
+main = "src/index.ts"
+compatibility_date = "2025-05-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Production routes — uncomment after the zone is connected to your Cloudflare account.
+# The wildcard route catches every subdomain of normieagent.com.
+# [[routes]]
+# pattern = "*.normieagent.com/*"
+# zone_name = "normieagent.com"
+
+# Bindings are populated after you create the D1 database and KV namespace.
+# See README "Local dev runbook" for the exact wrangler commands.
+
+[[d1_databases]]
+binding = "DB"
+database_name = "normieagent"
+database_id = "ad243149-dfb9-40a1-bf28-69759ab21ff1"
+
+[[kv_namespaces]]
+binding = "AGENT_ROUTES_KV"
+id = "b16a5a6cadce4bc99e22896d8a297ecf"
+
+[observability]
+enabled = true
+
+[vars]
+ENVIRONMENT = "development"

@@ -1,0 +1,34 @@
+name = "normieagent-cron"
+main = "src/index.ts"
+compatibility_date = "2025-05-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Run every 5 minutes — Cloudflare's minimum scheduled granularity.
+[triggers]
+crons = ["*/5 * * * *"]
+
+# Shared D1 + KV bindings — same database and namespace as the other workers.
+[[d1_databases]]
+binding = "DB"
+database_name = "normieagent"
+database_id = "ad243149-dfb9-40a1-bf28-69759ab21ff1"
+
+[[kv_namespaces]]
+binding = "AGENT_ROUTES_KV"
+id = "b16a5a6cadce4bc99e22896d8a297ecf"
+
+[observability]
+enabled = true
+
+[vars]
+ENVIRONMENT = "development"
+
+# Maximum number of blocks scanned per cron tick. Infura allows up to 10_000
+# in a single eth_getLogs call but we keep a much lower ceiling so a single
+# run never blows the CPU budget or sub-request count.
+MAX_BLOCKS_PER_RUN = "2000"
+
+# INFURA_API_KEY is set via:
+#   wrangler secret put INFURA_API_KEY
+# For local dev: create .dev.vars at the root of this worker with
+#   INFURA_API_KEY=your-key-here

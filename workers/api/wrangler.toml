@@ -1,0 +1,32 @@
+name = "normieagent-api"
+main = "src/index.ts"
+compatibility_date = "2025-05-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Production route — uncomment after the zone is connected.
+# [[routes]]
+# pattern = "app.normieagent.com/api/*"
+# zone_name = "normieagent.com"
+
+# Shared D1 + KV bindings — same database and namespace as the dispatch worker.
+[[d1_databases]]
+binding = "DB"
+database_name = "normieagent"
+database_id = "ad243149-dfb9-40a1-bf28-69759ab21ff1"
+
+[[kv_namespaces]]
+binding = "AGENT_ROUTES_KV"
+id = "b16a5a6cadce4bc99e22896d8a297ecf"
+
+[observability]
+enabled = true
+
+[vars]
+ENVIRONMENT = "development"
+# Allowed origins for CORS. Comma-separated. Override per-environment.
+ALLOWED_ORIGINS = "http://localhost:5173,https://app.normieagent.com"
+
+# INFURA_API_KEY is set via:
+#   wrangler secret put INFURA_API_KEY
+# For local dev: create .dev.vars at the root of this worker with
+#   INFURA_API_KEY=your-key-here
