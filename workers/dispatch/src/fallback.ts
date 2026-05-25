@@ -55,7 +55,7 @@ export function renderFallbackPage(agentName: string): string {
     <h1>No agent registered here yet</h1>
     <p><code>${safeName}.normieagent.com</code> has not been claimed.</p>
     <p>If you hold the awakened Normie for this agent, you can register it now.</p>
-    <a href="https://app.normieagent.com">Register at app.normieagent.com</a>
+    <a href="https://registry.normieagent.com">Register at registry.normieagent.com</a>
   </main>
 </body>
 </html>`;
