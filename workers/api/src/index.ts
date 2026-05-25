@@ -14,6 +14,7 @@ import {
 } from "./handlers/routes.js";
 import { handleStatus } from "./handlers/status.js";
 import { handleDirectory } from "./handlers/directory.js";
+import { handleVerifyEmail } from "./handlers/verify-email.js";
 
 /**
  * Match `/api/routes/:agentName` and return the captured name.
@@ -59,6 +60,11 @@ export default {
       // GET /api/directory — public listing of opted-in active routes.
       if (path === "/api/directory" && request.method === "GET") {
         return handleDirectory(env, origin);
+      }
+
+      // POST /api/verify-email — consume a verification token.
+      if (path === "/api/verify-email" && request.method === "POST") {
+        return handleVerifyEmail(request, env, origin);
       }
 
       // PUT/DELETE /api/routes/:agentName

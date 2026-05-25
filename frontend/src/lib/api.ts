@@ -105,3 +105,18 @@ export interface DirectoryResponse {
 export function getDirectory(): Promise<DirectoryResponse> {
   return request<DirectoryResponse>("/api/directory", { method: "GET" });
 }
+
+export interface VerifyEmailResponse {
+  ok: true;
+  alreadyVerified: boolean;
+  agentName: string;
+  subdomain: string;
+  verifiedAt?: number;
+}
+
+export function verifyEmail(token: string): Promise<VerifyEmailResponse> {
+  return request<VerifyEmailResponse>("/api/verify-email", {
+    method: "POST",
+    body: JSON.stringify({ token }),
+  });
+}

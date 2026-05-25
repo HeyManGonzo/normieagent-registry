@@ -28,6 +28,7 @@ pnpm admin add `
   --normie-id <tokenId> `
   --owner 0x<wallet> `
   --target https://<their-url> `
+  --email owner@example.com `
   --remote
 ```
 
@@ -39,6 +40,13 @@ pnpm admin add `
 - `--owner` must be `0x` + 40 hex chars. Case-insensitive, stored lowercased.
 - `--target` must be `http://` or `https://`. Path/query are taken from the
   incoming request, only the origin is used here.
+- `--email` is required. The CLI generates a single-use verification token
+  (32 random bytes, hex), persists it to D1, and sends a verification email
+  via Resend. Re-running `add` with the same email is idempotent — it skips
+  the send if the address is already verified. Re-running with a *different*
+  email resets verification and triggers a fresh send.
+- Add `--no-send` to upsert a row without (re)sending the verification email
+  — useful when you're only fixing a typo in `target_url` or `normie-id`.
 
 ### List all registrations
 
@@ -84,6 +92,42 @@ pnpm admin add --name <agentname> ... --hidden --remote
 
 Edge cache TTL on `/api/directory` is 60s, so toggles propagate within ~1
 minute.
+
+### Contact email + verification
+
+Every active registration carries a contact email so the operator has an
+out-of-band channel for incident notifications and ownership changes. The
+holder confirms the address via a tokenised link delivered through
+[Resend](https://resend.com).
+
+Resend API key — set both places (the worker doesn't currently send,
+`scripts/admin.mjs` does, but the secret is kept beside the worker's other
+secrets so there's a single source):
+
+```powershell
+pnpm --filter @normieagent/api exec wrangler secret put RESEND_API_KEY
+# and, in workers/api/.dev.vars (gitignored):
+#   RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+Sender domain must be verified at Resend (SPF + DKIM + DMARC on
+`normieagent.com`). Without those DNS records, sends from
+`noreply@normieagent.com` will hard-fail; fall back to `onboarding@resend.dev`
+only for one-off tests.
+
+Resend the verification email (for example, the holder lost the original):
+
+```powershell
+pnpm admin resend-verification --name <agentname> --remote
+```
+
+This generates a new token, stores it on the row, sends a fresh email, and
+invalidates the previous link. Already-verified rows are rejected with an
+error — change the email by re-running `add --email <new>` instead.
+
+Token TTL is 7 days from `email_verification_sent_at`. After that, the
+worker returns `410 Gone` and the verify page shows an "expired" state with
+instructions to ask the operator for a resend.
 
 ### Smoke-test after any change
 

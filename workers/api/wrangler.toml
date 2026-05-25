@@ -34,3 +34,4 @@ ALLOWED_ORIGINS = "https://registry.normieagent.com"
 #   wrangler secret put INFURA_API_KEY
 # For local dev: create .dev.vars at the root of this worker with
 #   INFURA_API_KEY=your-key-here
+#   RESEND_API_KEY=your-resend-key-here   # used by scripts/admin.mjs, not the worker

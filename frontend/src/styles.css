@@ -588,3 +588,34 @@ code {
 .dir-empty p {
   margin: 0.25rem 0;
 }
+
+
+/* ───── Email verification ───── */
+.verify {
+  max-width: 640px;
+}
+.verify-card {
+  margin-top: 1.5rem;
+  padding: 1.25rem 1.25rem;
+  border: 1px solid var(--line);
+  background: var(--card);
+}
+.verify-title {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  margin: 0 0 0.6rem 0;
+}
+.verify-card p {
+  margin: 0.4rem 0;
+  line-height: 1.55;
+}
+.verify-ok {
+  border-color: var(--fg);
+}
+.verify-warn {
+  border-color: var(--muted);
+}
+.verify-err {
+  border-color: var(--err);
+}
