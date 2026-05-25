@@ -27,13 +27,12 @@ enabled = true
 
 [vars]
 ENVIRONMENT = "production"
-
-# Maximum number of blocks scanned per cron tick. Infura allows up to 10_000
-# in a single eth_getLogs call but we keep a much lower ceiling so a single
-# run never blows the CPU budget or sub-request count.
+# Per-run block-range cap for the Transfer scanner. Keeps eth_getLogs requests
+# under Infura's free-tier limits even after a long outage.
 MAX_BLOCKS_PER_RUN = "2000"
-
-# INFURA_API_KEY is set via:
-#   wrangler secret put INFURA_API_KEY
-# For local dev: create .dev.vars at the root of this worker with
-#   INFURA_API_KEY=your-key-here
+# Hybrid claim flow — pay-to-claim watcher. Mirror these values to
+# workers/api/wrangler.toml so the two workers agree on what a valid deposit
+# looks like. INFURA_API_KEY + ETHERSCAN_API_KEY are secrets set via
+# `wrangler secret put`; for local dev put both in workers/cron/.dev.vars.
+OPERATOR_WALLET = "0x8Ed822f4300B8B95C9549F95Cb3e609d8DFA5D2D"
+CLAIM_AMOUNT_WEI = "2000000000000000"

@@ -84,3 +84,24 @@ export const AGENT_ROUTE_KEY_PREFIX = "agent:" as const;
 export function agentRouteKey(agentName: string): string {
   return `${AGENT_ROUTE_KEY_PREFIX}${agentName.toLowerCase()}`;
 }
+
+/**
+ * Default deposit amount for hybrid (pay-to-claim) registrations, in wei.
+ * 0.002 ETH. Overridable per-environment via the CLAIM_AMOUNT_WEI var on the
+ * API + cron workers so the price can be tuned without a redeploy.
+ */
+export const DEFAULT_CLAIM_AMOUNT_WEI = "2000000000000000" as const;
+
+/**
+ * Default TTL for a pending claim, in seconds. Counted from row creation and
+ * spans the whole flow (email verification + payment). 24 hours so users have
+ * time to find the verification email and fund/send a tx without rushing.
+ * After this elapses the cron worker flips the row to `expired`.
+ */
+export const DEFAULT_CLAIM_TTL_SECONDS = 86400 as const;
+
+/**
+ * Cron cursor key in KV for the claim-payment watcher. Stores the last block
+ * scanned via Etherscan for incoming transfers to the operator wallet.
+ */
+export const CLAIM_CURSOR_KEY = "cron:lastClaimBlock" as const;

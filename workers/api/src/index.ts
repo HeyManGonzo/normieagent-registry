@@ -15,6 +15,11 @@ import {
 import { handleStatus } from "./handlers/status.js";
 import { handleDirectory } from "./handlers/directory.js";
 import { handleVerifyEmail } from "./handlers/verify-email.js";
+import {
+  handleCreateClaim,
+  handleGetClaim,
+  handleVerifyClaimEmail,
+} from "./handlers/claim.js";
 
 /**
  * Match `/api/routes/:agentName` and return the captured name.
@@ -65,6 +70,22 @@ export default {
       // POST /api/verify-email — consume a verification token.
       if (path === "/api/verify-email" && request.method === "POST") {
         return handleVerifyEmail(request, env, origin);
+      }
+
+      // POST /api/claim — create a hybrid (pay-to-claim) pending registration.
+      if (path === "/api/claim" && request.method === "POST") {
+        return handleCreateClaim(request, env, origin);
+      }
+
+      // POST /api/claim/verify-email — consume the claim email-verify token.
+      if (path === "/api/claim/verify-email" && request.method === "POST") {
+        return handleVerifyClaimEmail(request, env, origin);
+      }
+
+      // GET /api/claim/:id — poll claim status from the deposit screen.
+      const claimParam = matchRouteParam(path, "/api/claim/");
+      if (claimParam !== null && request.method === "GET") {
+        return handleGetClaim(env, claimParam, origin);
       }
 
       // PUT/DELETE /api/routes/:agentName

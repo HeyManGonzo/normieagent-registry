@@ -1,0 +1,113 @@
+Good change — let me re-architect the flow:
+
+```
+form submit  →  awaiting_email   (verify email sent)
+email click  →  awaiting_payment (deposit screen unlocked)
+eth lands    →  confirmed        (agent_routes created)
+```
+
+Before I touch code, let me look at the existing email-send code in the admin CLI so the worker reuses the same Resend pattern instead of duplicating it.
+
+Solid call. Re-architecting:
+
+**New status machine:**
+```
+awaiting_email   →  (click link)   →  awaiting_payment
+awaiting_payment →  (eth lands)   →  confirmed
+either           →  (TTL hit)     →  expired
+awaiting_payment →  (verify fails) →  failed_ownership / failed_other
+```
+
+**TTL bump**: I'm extending the default from 1 h → **24 h** since the user now needs time to find an email *and* fund/send the tx. Still env-configurable (`CLAIM_TTL_SECONDS`).
+
+**Deposit-address gating**: I'll only return `depositAddress` / `amountWei` from `GET /api/claim/:id` once the email is verified — so a user *can't* skip the email step even if they fish the address out of devtools.
+
+Starting the changes. First, fold email columns into migration 0005 (it hasn't been applied yet):
+
+Update shared types:
+
+Bump default TTL to 24h and update wrangler:
+
+Now the email helper module. Keeping it small and self-contained:
+
+Now rewrite the claim handler with the two-stage flow:
+
+Now update the create-claim logic to use email-first flow and rewrite the GET handler + add verify-email handler:
+
+Wire the new endpoint in `index.ts`:
+
+Typecheck:
+
+Clean. Update task list and report.
+
+## Email-first claim flow shipped (Phases 1→3 v2)
+
+**Flow:**
+```
+POST /api/claim                  →  row created, status='awaiting_email', Resend email fires
+POST /api/claim/verify-email     →  token consumed, status→'awaiting_payment', deposit unlocked
+GET  /api/claim/:id              →  deposit address+amount returned only when status≠awaiting_email
+(eth lands, Phase 4)             →  cron flips to 'confirmed', writes agent_routes
+```
+
+**Files touched in this round:**
+
+| File | Change |
+|---|---|
+| `migrations/0005_pending_claims.sql` | Added `email_verified_at`, `email_verification_token`, `email_verification_sent_at` cols + partial index on token; status default flipped to `awaiting_email`; expiry sweep index now covers both pending statuses |
+| `packages/shared/src/types.ts` | `ClaimStatus` gains `awaiting_email`/`awaiting_payment`; `ClaimStatusResponse.depositAddress\|amountWei\|amountEth` made nullable; added `VerifyClaimEmailBody`/`Response`; `ClaimCreatedResponse` no longer leaks deposit details |
+| `packages/shared/src/constants.ts` | Default TTL 3600 → 86400 (24 h) |
+| `workers/api/src/env.ts` + `wrangler.toml` | `REGISTRY_BASE_URL` var; `RESEND_API_KEY` declared as secret on the API worker |
+| `workers/api/src/email.ts` | New — Resend client + claim-verification template (same visual style as the existing agent verify email; copy mentions "unlock the payment instructions") |
+| `workers/api/src/handlers/claim.ts` | Email-first POST, deposit-gated GET, new `handleVerifyClaimEmail` |
+| `workers/api/src/index.ts` | Routes `POST /api/claim/verify-email` |
+
+**Notable behaviour:**
+- If Resend fails during POST /api/claim, the row stays in `awaiting_email` with the token saved — Phase 6 admin CLI will get a `resend-claim-verification` subcommand so the operator can retry without forcing the user to start over.
+- Verification link in the email points at `https://registry.normieagent.com/verify-claim?token=…` (a new frontend route — Phase 5 work).
+- Token expiry is governed by the row's `expires_at` (24 h), not a separate window — keeps the state machine simple.
+- Idempotent verify endpoint: clicking the link twice returns `alreadyVerified: true` with the current status.
+
+Typecheck clean on `@normieagent/shared` and `@normieagent/api`. Nothing deployed yet.
+
+---
+
+## Before Phase 4 (cron): one open call
+
+You picked Etherscan in the previous round, but I still need a yes on the **V2 unified API** (the V1 chain-specific endpoints were deprecated in 2025). Your existing key works the same way; the call shape changes from:
+
+```
+https://api.etherscan.io/api?module=account&action=txlist&address=…
+```
+
+to:
+
+```
+https://api.etherscan.io/v2/api?chainid=1&module=account&action=txlist&address=…
+```
+
+OK to use V2?
+
+Also, two things I'll need from you when we get to deployment (not now — only flagging so you can have them ready):
+
+1. **`wrangler secret put RESEND_API_KEY`** on the API worker (your existing Resend key, same as `.dev.vars`).
+2. **`wrangler secret put ETHERSCAN_API_KEY`** on the cron worker.
+
+Want me to proceed straight to Phase 4 (cron tx-watcher) on the V2 assumption, or wait for explicit confirmation?
+
+
+
+
+
+
+V2 it is. Reading the existing cron implementation to match its style:
+
+Need to confirm a few schema details for the agent_routes upsert:
+
+Updating cron env + wrangler first:
+
+Duplicate `MAX_BLOCKS_PER_RUN` — clean up the stale block:
+
+Now the claim processor. This is the biggest chunk — splitting into two files (Etherscan client + processor) keeps it under the 150-line cap:
+
+⚠️ **You have run out of credits for gonzo.hartwich@gmail.com. Please [click here](https://app.augmentcode.com/account?utm_source=vscode&utm_medium=in_agent_conversation&utm_campaign=usage_balance_depleted&utm_content=here) to upgrade.** ⚠️

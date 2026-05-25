@@ -29,9 +29,15 @@ enabled = true
 ENVIRONMENT = "production"
 # Allowed origins for CORS. Comma-separated. Override per-environment.
 ALLOWED_ORIGINS = "https://registry.normieagent.com"
+# Hybrid claim flow — pay-to-claim alternative to wallet-signing.
+# Operator wallet receives the deposits; amount + TTL are tunable without
+# a redeploy by editing here and re-running `wrangler deploy`.
+OPERATOR_WALLET = "0x8Ed822f4300B8B95C9549F95Cb3e609d8DFA5D2D"
+CLAIM_AMOUNT_WEI = "2000000000000000"
+CLAIM_TTL_SECONDS = "86400"
+# Base URL the verification email links point at. Override per-environment.
+REGISTRY_BASE_URL = "https://registry.normieagent.com"
 
-# INFURA_API_KEY is set via:
-#   wrangler secret put INFURA_API_KEY
-# For local dev: create .dev.vars at the root of this worker with
-#   INFURA_API_KEY=your-key-here
-#   RESEND_API_KEY=your-resend-key-here   # used by scripts/admin.mjs, not the worker
+# Secrets (set via `wrangler secret put`, or workers/api/.dev.vars locally):
+#   INFURA_API_KEY   — read by /api/register and /api/claim for ownerOf checks
+#   RESEND_API_KEY   — read by /api/claim to send the verification email
