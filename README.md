@@ -60,11 +60,14 @@ See `normieagent-architecture.md` for the full design. The high-level production
 
 | Subdomain | Serves |
 |---|---|
-| `registry.normieagent.com` | Frontend (Cloudflare Pages) |
+| `registry.normieagent.com` | Frontend (Workers Static Assets) |
 | `api.normieagent.com` | Management API worker |
 | `*.normieagent.com` | Dispatch worker (wildcard route) |
 
 Secrets are set with `wrangler secret put INFURA_API_KEY` per worker.
+
+Day-2 procedures (adding/removing registrations, monitoring, alerting,
+recovery) live in [`OPERATIONS.md`](./OPERATIONS.md).
 
 ## Repo layout
 
@@ -77,7 +80,9 @@ Secrets are set with `wrangler secret put INFURA_API_KEY` per worker.
 │   └── cron/                  Transfer-event watcher
 ├── packages/shared/           Shared types, constants, ABI
 ├── migrations/                D1 SQL migrations
-└── normieagent-architecture.md
+├── scripts/admin.mjs          Manual registry CLI (add/list/remove)
+├── normieagent-architecture.md
+└── OPERATIONS.md              Day-2 runbook (registrations, monitoring, alerts)
 ```
 
 ## License
