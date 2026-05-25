@@ -8,6 +8,18 @@ import type { Env } from "./env.js";
 import { renderFallbackPage } from "./fallback.js";
 
 /**
+ * Hostnames that are caught by the `*.normieagent.com/*` wildcard route but
+ * are actually owned by other Workers / origins via their own Custom Domain
+ * bindings. The dispatch worker re-issues these via fetch(request) so
+ * Cloudflare's loop suppression routes them back through the edge to the
+ * correct owner (the wildcard route is skipped on the second hop).
+ */
+const PASSTHROUGH_HOSTS: ReadonlySet<string> = new Set([
+  `www.${APEX_DOMAIN}`,
+  `registry.${APEX_DOMAIN}`,
+]);
+
+/**
  * Extract the leftmost label from a host header, but only when the host
  * is a true subdomain of normieagent.com. Returns null for the apex,
  * `www.normieagent.com`, or any unrelated host (e.g. preview deployments).
@@ -94,13 +106,13 @@ export default {
     const url = new URL(request.url);
     const host = url.hostname.toLowerCase();
 
-    // The wildcard worker route `*.normieagent.com/*` also captures www,
-    // which is owned by the Gemel concierge site on Vercel. Re-issuing the
-    // request via fetch() bypasses the worker route (Cloudflare suppresses
-    // loops by routing same-URL refetches to the configured origin), so the
-    // request lands on the www DNS record (the Vercel CNAME) with the
+    // The wildcard worker route `*.normieagent.com/*` also captures hosts
+    // owned by other origins / workers (the www Vercel site, the registry
+    // SPA worker, etc). Re-issuing the request via fetch() bypasses this
+    // worker route — Cloudflare suppresses same-URL loops by sending the
+    // refetch to the configured origin / Custom Domain owner, with the
     // original Host header intact.
-    if (host === `www.${APEX_DOMAIN}`) {
+    if (PASSTHROUGH_HOSTS.has(host)) {
       return fetch(request);
     }
 
