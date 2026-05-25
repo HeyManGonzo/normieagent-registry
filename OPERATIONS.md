@@ -22,6 +22,9 @@ Every command below assumes the repo root as the working directory and
 | Re-send a verification email | `pnpm admin resend-verification --name <s> --remote` |
 | List every row in D1 | `pnpm admin list --remote` |
 | Smoke-test a live route | `curl.exe -sSI https://<s>.normieagent.com/` |
+| List active pending claims | `pnpm admin list-claims --remote` |
+| List all pending claims (incl. terminal) | `pnpm admin list-claims --all --remote` |
+| Re-send a claim verification email | `pnpm admin resend-claim-verification --id <n> --remote` |
 
 ### Worked examples
 
@@ -206,6 +209,83 @@ error — change the email by re-running `add --email <new>` instead.
 Token TTL is 7 days from `email_verification_sent_at`. After that, the
 worker returns `410 Gone` and the verify page shows an "expired" state with
 instructions to ask the operator for a resend.
+
+### Claim management (pay-to-claim flow)
+
+Users can register without connecting a wallet by paying a small ETH fee. The
+flow runs through `pending_claims` in D1 and is managed by the cron worker.
+The admin CLI handles the cases where operator intervention is needed.
+
+#### List pending claims
+
+```powershell
+# Active claims only (awaiting_email or awaiting_payment):
+pnpm admin list-claims --remote
+
+# All claims including confirmed / expired / failed:
+pnpm admin list-claims --all --remote
+```
+
+Use this to find a claim's `id` for the commands below.
+
+#### Re-send a claim verification email
+
+When `POST /api/claim` fires successfully but Resend fails to deliver
+(transient Resend outage, spam filter, etc.), the row stays in
+`awaiting_email` with the token saved. The user doesn't need to restart —
+just resend:
+
+```powershell
+pnpm admin resend-claim-verification --id <claimId> --remote
+```
+
+This generates a **fresh token** (invalidating any previous link), updates
+`email_verification_sent_at`, and delivers a new email to the `contact_email`
+on the row. The claim expiry (`expires_at`) is not extended — if the user is
+close to the 24-hour window, communicate that.
+
+Only valid for claims in `awaiting_email` status:
+- `awaiting_payment` → email already verified; the cron is watching for ETH.
+- terminal statuses → nothing to resend; create a new claim if needed.
+
+#### Claim secrets (deployment)
+
+Two secrets are needed on the cron worker for the payment watcher:
+
+```powershell
+pnpm --filter @normieagent/cron exec wrangler secret put ETHERSCAN_API_KEY
+pnpm --filter @normieagent/cron exec wrangler secret put INFURA_API_KEY
+```
+
+The API worker also needs its Resend key (for the email sent on claim creation):
+
+```powershell
+pnpm --filter @normieagent/api exec wrangler secret put RESEND_API_KEY
+```
+
+Local dev — add to `workers/cron/.dev.vars`:
+```
+ETHERSCAN_API_KEY=<your key>
+INFURA_API_KEY=<your key>
+```
+
+#### Test the cron claim processor locally
+
+```powershell
+# Start the cron worker with test-scheduled support:
+pnpm --filter @normieagent/cron exec wrangler dev --test-scheduled
+
+# In a second terminal — trigger just the claim processor:
+curl http://localhost:8787/run-claims
+```
+
+#### Recovering a failed claim
+
+| Failure status | Cause | Action |
+|---|---|---|
+| `failed_ownership` | Normie sold after claim was submitted but before payment landed | Refund ETH to `from_wallet`; operator must manually add if new owner wants to claim |
+| `failed_other` | Agent name collision or DB error | Check `failure_reason` from `list-claims --all`; refund if needed; fix and re-run `add` |
+| `expired` | 24-hour TTL elapsed before payment | Refund if ETH was sent; user must submit a new claim |
 
 ### Smoke-test after any change
 

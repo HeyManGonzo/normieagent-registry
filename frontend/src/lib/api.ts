@@ -119,3 +119,45 @@ export function verifyEmail(token: string): Promise<VerifyEmailResponse> {
     body: JSON.stringify({ token }),
   });
 }
+
+export type ClaimStatus =
+  | "awaiting_email"
+  | "awaiting_payment"
+  | "confirmed"
+  | "expired"
+  | "failed_ownership"
+  | "failed_other";
+
+export interface VerifyClaimEmailResponse {
+  claimId: number;
+  status: ClaimStatus;
+  agentName: string;
+  alreadyVerified: boolean;
+}
+
+export interface ClaimStatusResponse {
+  id: number;
+  status: ClaimStatus;
+  agentName: string;
+  normieId: number;
+  targetUrl: string;
+  contactEmail: string;
+  depositAddress: string | null;
+  amountWei: string | null;
+  amountEth: string | null;
+  expiresAt: number;
+  emailVerifiedAt: number | null;
+  txHash: string | null;
+  failureReason: string | null;
+}
+
+export function verifyClaimEmail(token: string): Promise<VerifyClaimEmailResponse> {
+  return request<VerifyClaimEmailResponse>("/api/claim/verify-email", {
+    method: "POST",
+    body: JSON.stringify({ token }),
+  });
+}
+
+export function getClaim(id: number): Promise<ClaimStatusResponse> {
+  return request<ClaimStatusResponse>(`/api/claim/${id}`, { method: "GET" });
+}

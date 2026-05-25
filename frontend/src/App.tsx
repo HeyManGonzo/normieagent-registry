@@ -4,6 +4,7 @@ import { ConnectButton } from "./components/ConnectButton.js";
 import { AgentList } from "./components/AgentList.js";
 import { Directory } from "./components/Directory.js";
 import { VerifyEmail } from "./components/VerifyEmail.js";
+import { VerifyClaim } from "./components/VerifyClaim.js";
 import { OPERATOR_TWITTER_HANDLE, OPERATOR_TWITTER_URL, WALLET_FLOW_ENABLED } from "./config.js";
 
 /**
@@ -36,8 +37,9 @@ export function App() {
   const path = useRoute();
   const isDirectory = path === "/directory" || path.startsWith("/directory/");
   const isVerifyEmail = path === "/verify-email";
+  const isVerifyClaim = path === "/verify-claim";
   const showAgentList =
-    !isDirectory && !isVerifyEmail && WALLET_FLOW_ENABLED && isConnected;
+    !isDirectory && !isVerifyEmail && !isVerifyClaim && WALLET_FLOW_ENABLED && isConnected;
 
   return (
     <div className="shell">
@@ -59,7 +61,9 @@ export function App() {
       </header>
 
       <main className="body">
-        {isVerifyEmail ? (
+        {isVerifyClaim ? (
+          <VerifyClaim />
+        ) : isVerifyEmail ? (
           <VerifyEmail />
         ) : isDirectory ? (
           <Directory />

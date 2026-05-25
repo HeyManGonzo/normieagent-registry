@@ -18,10 +18,15 @@ export function Directory() {
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        const message =
+        const raw =
           (err as { error?: string }).error ??
           (err as { message?: string }).message ??
           "Could not load directory";
+        // Don't render a raw HTML error page — collapse it to a short message.
+        const message =
+          typeof raw === "string" && raw.trimStart().startsWith("<")
+            ? `API error (HTTP ${(err as { status?: number }).status ?? "?"}) — check the dev:api terminal`
+            : raw;
         setState({ kind: "error", message });
       });
     return () => {

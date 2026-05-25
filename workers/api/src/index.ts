@@ -36,12 +36,13 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     const path = url.pathname;
-    const origin = resolveAllowedOrigin(env, request.headers.get("origin"));
-
-    const preflight = handlePreflight(request, origin);
-    if (preflight) return preflight;
+    let origin: string | null = null;
 
     try {
+      origin = resolveAllowedOrigin(env, request.headers.get("origin"));
+
+      const preflight = handlePreflight(request, origin);
+      if (preflight) return preflight;
       // Health check.
       if (path === "/api/health" && request.method === "GET") {
         return json({ ok: true, env: env.ENVIRONMENT }, {}, origin);

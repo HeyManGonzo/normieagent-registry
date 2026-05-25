@@ -321,6 +321,134 @@ async function cmdAdd(args) {
   console.log(`✓ Done. ${name}.normieagent.com now routes to ${target}`);
 }
 
+/**
+ * Claim verification email — links to /verify-claim (not /verify-email).
+ * Mirrors the HTML template in workers/api/src/email.ts exactly.
+ */
+async function sendClaimVerificationEmail({ to, agentName, token }) {
+  const subdomain = `${agentName}.normieagent.com`;
+  const verifyUrl = `${REGISTRY_BASE_URL}/verify-claim?token=${encodeURIComponent(token)}`;
+  const subject = `Verify your email to claim ${subdomain}`;
+  const text = [
+    "Hi,",
+    "",
+    `You just submitted a claim for ${subdomain} on the Normieagent`,
+    "Subdomain Registry. Confirm this email address to unlock the payment",
+    "instructions and finish your registration.",
+    "",
+    "Verify your email:",
+    verifyUrl,
+    "",
+    "This link is single-use and expires in 24 hours. If you didn't expect",
+    "this email, you can ignore it — no payment instructions are issued and",
+    "no record will be kept.",
+    "",
+    "— Normieagent Registry",
+    `   ${REGISTRY_BASE_URL}`,
+  ].join("\n");
+  const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  }[c]));
+  const safeSub = esc(subdomain);
+  const safeUrl = esc(verifyUrl);
+  const html = `<!doctype html><html><body style="margin:0;padding:0;background:#0e0e10;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#e7e7ea;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0e0e10;padding:32px 16px;"><tr><td align="center"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#16161a;border:1px solid #26262c;"><tr><td style="padding:32px 32px 16px 32px;"><div style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;letter-spacing:0.18em;color:#8a8a93;">NORMIEAGENT · REGISTRY</div><h1 style="margin:8px 0 0 0;font-size:22px;line-height:1.3;color:#fafafa;">Verify your email to claim <code style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:18px;color:#fafafa;">${safeSub}</code></h1></td></tr><tr><td style="padding:0 32px 8px 32px;font-size:15px;line-height:1.6;color:#c5c5cc;"><p style="margin:0 0 16px 0;">You just submitted a claim for <strong style="color:#fafafa;">${safeSub}</strong>. Confirm this email to unlock the payment instructions and finish your registration.</p></td></tr><tr><td align="center" style="padding:16px 32px 8px 32px;"><a href="${safeUrl}" style="display:inline-block;background:#fafafa;color:#0e0e10;padding:12px 24px;font-weight:600;text-decoration:none;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px;letter-spacing:0.02em;">VERIFY EMAIL &rarr;</a></td></tr><tr><td style="padding:8px 32px 24px 32px;font-size:13px;line-height:1.6;color:#8a8a93;"><p style="margin:0 0 8px 0;">Or paste this URL into your browser:</p><p style="margin:0;word-break:break-all;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:#c5c5cc;">${safeUrl}</p></td></tr><tr><td style="padding:16px 32px 32px 32px;border-top:1px solid #26262c;font-size:12px;line-height:1.6;color:#6e6e76;">Single-use link, expires in 24 hours. If you didn't expect this email, you can safely ignore it — no payment instructions will be issued and no record will be kept.</td></tr></table></td></tr></table></body></html>`;
+
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${getResendApiKey()}`,
+    },
+    body: JSON.stringify({ from: RESEND_FROM, to: [to], subject, html, text }),
+  });
+  const body = await res.text();
+  if (!res.ok) die(`Resend send failed (HTTP ${res.status}): ${body.slice(0, 300)}`);
+  let id = "";
+  try { id = (JSON.parse(body).id ?? ""); } catch {}
+  return id;
+}
+
+/**
+ * list-claims — show pending_claims rows, defaulting to non-terminal only.
+ */
+function cmdListClaims(args) {
+  const { values } = parseArgs({
+    args, options: {
+      all:    { type: "boolean", default: false },
+      remote: { type: "boolean", default: false },
+    }, strict: true,
+  });
+  const where = values.all
+    ? ""
+    : `WHERE status IN ('awaiting_email', 'awaiting_payment')`;
+  d1Execute(
+    `SELECT id, agent_name, normie_id, from_wallet, contact_email, status,
+            amount_wei, tx_hash, expires_at, created_at, updated_at
+       FROM pending_claims
+       ${where}
+       ORDER BY created_at DESC;`,
+    values.remote,
+  );
+}
+
+/**
+ * resend-claim-verification --id <claimId>
+ *
+ * Generates a fresh token and re-sends the claim verification email. Only
+ * valid for claims in 'awaiting_email' status — if the email is already
+ * verified there is nothing to resend (the cron is watching for the payment).
+ */
+async function cmdResendClaimVerification(args) {
+  const { values } = parseArgs({
+    args, options: {
+      id:     { type: "string" },
+      remote: { type: "boolean", default: false },
+    }, strict: true,
+  });
+  const id = Number.parseInt(values.id ?? "", 10);
+  if (!Number.isFinite(id) || id <= 0) die("--id must be a positive integer (use list-claims to find it)");
+
+  const rows = d1Query(
+    `SELECT id, agent_name, contact_email, status, expires_at
+       FROM pending_claims
+      WHERE id = ${id}
+      LIMIT 1;`,
+    values.remote,
+  );
+  const row = rows[0];
+  if (!row) die(`No pending claim with id=${id}`);
+
+  if (row.status !== "awaiting_email") {
+    if (row.status === "awaiting_payment") {
+      die(`Claim ${id} is already in 'awaiting_payment' — email is verified. The cron is watching for the ETH deposit.`);
+    }
+    die(`Claim ${id} has terminal status '${row.status}' — nothing to resend.`);
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  if (row.expires_at <= now) {
+    die(`Claim ${id} has expired (at ${new Date(row.expires_at * 1000).toISOString()}). Ask the user to submit a new claim.`);
+  }
+
+  const token = randomBytes(32).toString("hex");
+  d1Execute(
+    `UPDATE pending_claims
+        SET email_verification_token   = '${token}',
+            email_verification_sent_at = ${now},
+            updated_at                 = ${now}
+      WHERE id = ${id};`.replace(/\s+/g, " ").trim(),
+    values.remote,
+  );
+  console.log(`→ Sending claim verification email to ${row.contact_email}`);
+  const emailId = await sendClaimVerificationEmail({
+    to: row.contact_email,
+    agentName: row.agent_name,
+    token,
+  });
+  console.log(`✓ Email queued (Resend id: ${emailId || "<none>"})`);
+  console.log(`✓ Claim ${id} (${row.agent_name}) — fresh verify link sent. Expires at ${new Date(row.expires_at * 1000).toISOString()}.`);
+}
+
 async function cmdResendVerification(args) {
   const { values } = parseArgs({
     args, options: {
@@ -405,20 +533,28 @@ function cmdRemove(args) {
 const [, , sub, ...rest] = process.argv;
 const run = async () => {
   switch (sub) {
-    case "add":                  await cmdAdd(rest); break;
-    case "list":                 cmdList(rest); break;
-    case "remove":               cmdRemove(rest); break;
-    case "hide":                 cmdSetListed(rest, 0); break;
-    case "show":                 cmdSetListed(rest, 1); break;
-    case "resend-verification":  await cmdResendVerification(rest); break;
+    case "add":                        await cmdAdd(rest); break;
+    case "list":                       cmdList(rest); break;
+    case "remove":                     cmdRemove(rest); break;
+    case "hide":                       cmdSetListed(rest, 0); break;
+    case "show":                       cmdSetListed(rest, 1); break;
+    case "resend-verification":        await cmdResendVerification(rest); break;
+    case "list-claims":                cmdListClaims(rest); break;
+    case "resend-claim-verification":  await cmdResendClaimVerification(rest); break;
     default:
-      console.log("Usage: pnpm admin <add|list|remove|hide|show|resend-verification> [options] [--remote]");
+      console.log("Usage: pnpm admin <command> [options] [--remote]");
+      console.log("");
+      console.log("agent_routes commands:");
       console.log("  add    --name <s> --normie-id <n> --owner <0x…> --target <url> --email <e> [--hidden] [--no-send]");
       console.log("  list");
       console.log("  remove --name <s>");
-      console.log("  hide   --name <s>   (exclude from public /directory)");
-      console.log("  show   --name <s>   (re-include in public /directory)");
+      console.log("  hide   --name <s>      (exclude from public /directory)");
+      console.log("  show   --name <s>      (re-include in public /directory)");
       console.log("  resend-verification --name <s>   (send a fresh verify-email link)");
+      console.log("");
+      console.log("pending_claims commands:");
+      console.log("  list-claims [--all]    (show active claims; --all includes terminal rows)");
+      console.log("  resend-claim-verification --id <n>   (re-send a claim verify email)");
       process.exit(sub ? 1 : 0);
   }
 };

@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm --filter @normieagent/cron exec tsc --noEmit)",
+      "Bash(pnpm --filter @normieagent/frontend exec tsc --noEmit)",
+      "Bash(node --check \"c:\\\\Users\\\\ghart\\\\NodeProjects\\\\Normieagent DNS\\\\scripts\\\\admin.mjs\")",
+      "Bash(pnpm --filter @normieagent/api exec tsc --noEmit)"
+    ]
+  }
+}

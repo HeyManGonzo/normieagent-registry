@@ -1,5 +1,6 @@
 import type { Env } from "./env.js";
 import { processTransfers } from "./process-transfers.js";
+import { processClaims } from "./claim-processor.js";
 
 /**
  * Cron worker. Two entry points:
@@ -34,6 +35,13 @@ export default {
       });
     }
 
+    if (url.pathname === "/run-claims" && env.ENVIRONMENT === "development") {
+      const result = await processClaims(env);
+      return new Response(JSON.stringify(result, null, 2), {
+        headers: { "content-type": "application/json" },
+      });
+    }
+
     return new Response("Not found", { status: 404 });
   },
 } satisfies ExportedHandler<Env>;
@@ -41,12 +49,16 @@ export default {
 async function runWithLogging(env: Env): Promise<void> {
   const started = Date.now();
   try {
-    const result = await processTransfers(env);
+    const [transfers, claims] = await Promise.all([
+      processTransfers(env),
+      processClaims(env),
+    ]);
     console.log(
       JSON.stringify({
         event: "cron.tick",
         durationMs: Date.now() - started,
-        ...result,
+        transfers,
+        claims,
       }),
     );
   } catch (err) {
