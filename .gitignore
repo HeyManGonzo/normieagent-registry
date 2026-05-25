@@ -34,3 +34,6 @@ pnpm-debug.log*
 # Cloudflare
 wrangler.toml.local
 .mf/
+
+# Local agent scratch files
+.git-commit-msg.tmp
