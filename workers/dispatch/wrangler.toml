@@ -9,12 +9,13 @@ compatibility_flags = ["nodejs_compat"]
 workers_dev = false
 preview_urls = false
 
-# The wildcard route catches every subdomain of normieagent.com (including
-# www). The apex (normieagent.com) is NOT matched by this pattern and
-# continues to resolve via the existing A record. www.normieagent.com IS
-# matched, but the dispatch worker re-issues those requests via fetch(),
-# which Cloudflare routes to the configured origin (the Vercel CNAME),
-# keeping the Gemel concierge site reachable.
+# The wildcard route catches every subdomain of normieagent.com. The apex
+# (normieagent.com) is NOT matched by this pattern and continues to resolve
+# via the existing A record. Subdomains owned by other origins / workers
+# (www → Vercel concierge site, registry → normieagent-registry SPA worker
+# via Custom Domain) are also matched, but the dispatch worker re-issues
+# those requests via fetch() — Cloudflare's same-URL loop suppression then
+# routes them to the real owner. See PASSTHROUGH_HOSTS in src/index.ts.
 [[routes]]
 pattern = "*.normieagent.com/*"
 zone_name = "normieagent.com"
