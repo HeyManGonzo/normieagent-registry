@@ -93,7 +93,6 @@ export function register(body: RegisterRequestBody): Promise<RegisterResponse> {
 export interface DirectoryEntry {
   agentName: string;
   normieId: number;
-  targetUrl: string;
   subdomain: string;
 }
 

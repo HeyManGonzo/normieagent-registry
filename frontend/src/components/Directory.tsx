@@ -35,7 +35,7 @@ export function Directory() {
       <h1 className="hero-title">REGISTERED&nbsp;AGENTS</h1>
       <p className="hero-desc">
         Every active <code>*.normieagent.com</code> subdomain is listed below.
-        Click through to visit the agent the operator has pointed it at.
+        Click a card to visit the agent.
       </p>
 
       {state.kind === "loading" ? (
@@ -56,25 +56,25 @@ function DirectoryList({ entries }: { entries: DirectoryEntry[] }) {
     <ul className="dir-grid">
       {entries.map((e) => (
         <li key={e.agentName} className="dir-card">
-          <div className="dir-head">
-            <a
-              className="dir-name"
-              href={`https://${e.subdomain}`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {e.subdomain}
-            </a>
-            <span className="dir-id">#{e.normieId}</span>
-          </div>
-          <p className="dir-target">
-            <span className="dir-arrow" aria-hidden>
-              →
-            </span>{" "}
-            <a href={e.targetUrl} target="_blank" rel="noopener noreferrer">
-              {e.targetUrl}
-            </a>
-          </p>
+          <a
+            className="dir-link"
+            href={`https://${e.subdomain}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <img
+              className="dir-image"
+              src={`https://api.normies.art/normie/${e.normieId}/image.svg`}
+              alt={`Normie #${e.normieId}`}
+              width={56}
+              height={56}
+              loading="lazy"
+            />
+            <div className="dir-meta">
+              <span className="dir-name">{e.subdomain}</span>
+              <span className="dir-id">Normie #{e.normieId}</span>
+            </div>
+          </a>
         </li>
       ))}
     </ul>

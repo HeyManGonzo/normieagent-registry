@@ -3,6 +3,80 @@
 Day-2 procedures for the live `normieagent.com` registry. Companion to
 `README.md` (what / how to dev) and `normieagent-architecture.md` (design).
 
+## Quick reference
+
+Every command below assumes the repo root as the working directory and
+`--remote` to operate against production. Drop `--remote` to hit the local
+`.wrangler/state` SQLite/KV used by `wrangler dev`.
+
+| I want to… | Command |
+|---|---|
+| Add a new agent | `pnpm admin add --name <s> --normie-id <n> --owner 0x<…> --target https://<…> --email <e> --remote` |
+| Change an existing agent's target URL | same `add` command with the new `--target`, plus `--no-send` (same email = no re-verification needed) |
+| Change an agent's contact email | same `add` command with the new `--email` (this *does* trigger a fresh verification send) |
+| Take an agent offline | `pnpm admin remove --name <s> --remote` |
+| Re-activate an offline agent | re-run the original `add` command |
+| Hide an agent from `/directory` | `pnpm admin hide --name <s> --remote` |
+| Show a hidden agent on `/directory` | `pnpm admin show --name <s> --remote` |
+| Register pre-hidden | add the `--hidden` flag to `add` |
+| Re-send a verification email | `pnpm admin resend-verification --name <s> --remote` |
+| List every row in D1 | `pnpm admin list --remote` |
+| Smoke-test a live route | `curl.exe -sSI https://<s>.normieagent.com/` |
+
+### Worked examples
+
+These are the real commands run during the initial bring-up — adapt the
+values, not the structure.
+
+```bash
+# Add a new agent (Bash / Git Bash — note the trailing backslashes)
+pnpm admin add \
+  --name gemel \
+  --normie-id 6832 \
+  --owner 0xa654eb70d2f33dadbb026371996b03f37af92f78 \
+  --target https://normieagent.com \
+  --email ramona@normieagent.com \
+  --remote
+
+# Re-target an existing, already-verified agent without re-sending an email
+pnpm admin add \
+  --name seil \
+  --normie-id 2601 \
+  --owner 0x699c08DbC2D24666449D231A2B7aE77337c00F45 \
+  --target https://bannerite.com \
+  --email gonzo@me.com \
+  --hidden --no-send --remote
+```
+
+PowerShell equivalent uses backtick (`` ` ``) for line continuation instead
+of backslash:
+
+```powershell
+pnpm admin add `
+  --name gemel `
+  --normie-id 6832 `
+  --owner 0xa654eb70d2f33dadbb026371996b03f37af92f78 `
+  --target https://normieagent.com `
+  --email ramona@normieagent.com `
+  --remote
+```
+
+If you mix the two, the shell will try to execute `--name` as a command —
+that's the symptom of a backslash in PowerShell or a backtick in Bash.
+
+### When does `add` actually email?
+
+| Existing row state | What `add` does about verification |
+|---|---|
+| No row yet | Generates token, sends email, writes `email_verification_*` to D1. |
+| Row exists, *same* email, *unverified* | Generates a fresh token, sends a new email, supersedes the old token. |
+| Row exists, *same* email, *already verified* | Skips Resend entirely. `verified_at` is preserved. |
+| Row exists, *different* email | Resets `email_verified_at` to NULL, generates token, sends email. |
+| Any of the above, with `--no-send` | Never calls Resend, never mutates the verification fields. |
+
+In short: use `--no-send` for cosmetic changes (target URL, normie id typo),
+omit it for ownership/identity changes (new contact email).
+
 ## Prerequisites
 
 - A local clone with `pnpm install` done.
@@ -73,8 +147,12 @@ To re-activate, just re-run `pnpm admin add` with the same name.
 
 Active rows are listed on `https://registry.normieagent.com/directory` by
 default. The page is fed by `GET /api/directory` which only returns
-`active = 1 AND directory_listed = 1` rows; owner wallet and contact email
-are never exposed.
+`active = 1 AND directory_listed = 1` rows; owner wallet, contact email,
+and `target_url` are never exposed in the API response. Each entry
+renders as a card with the agent's Normie portrait
+(`https://api.normies.art/normie/<id>/image.svg`), the subdomain, and the
+Normie #. Clicking the card opens the agent in a new tab — that is the
+only way a visitor learns where it points.
 
 Opt a row out (e.g. operator-owned synthetic monitor targets, or on owner
 request):
