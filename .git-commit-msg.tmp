@@ -1,0 +1,7 @@
+chore(frontend): drop redundant _redirects in favour of wrangler SPA config
+
+Workers Static Assets handles SPA fallback natively via the wrangler.toml
+`assets.not_found_handling = "single-page-application"` directive, so the
+legacy Pages-style `/* /index.html 200` rule is no longer needed. The new
+Cloudflare validator also rejects it as a potential infinite loop, which
+blocked the most recent deploy.
