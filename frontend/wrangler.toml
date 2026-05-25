@@ -1,0 +1,29 @@
+# Cloudflare Workers Static Assets config for the registry UI.
+#
+# The frontend is a pure static Vite/React SPA — no server-side code runs in
+# this Worker. Cloudflare serves `./dist` directly from the edge, and any
+# request that doesn't match a built asset is rewritten to `index.html` via
+# `not_found_handling = "single-page-application"` so client-side routes
+# resolve correctly.
+#
+# Deployed via the connected GitHub repo. The Cloudflare project's deploy
+# command must cd into this directory first so wrangler doesn't run from the
+# pnpm workspace root (which has no application config of its own):
+#
+#   cd frontend && npx wrangler deploy
+#
+# The `name` below must match the Cloudflare project name exactly.
+name = "normieagent-registry"
+compatibility_date = "2025-05-01"
+
+# Disable the *.workers.dev preview hostname — the project is reached only
+# through the custom domain registry.normieagent.com.
+workers_dev = false
+preview_urls = false
+
+[assets]
+directory = "./dist"
+not_found_handling = "single-page-application"
+
+[observability]
+enabled = true
