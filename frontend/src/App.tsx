@@ -1,24 +1,62 @@
+import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import { ConnectButton } from "./components/ConnectButton.js";
 import { AgentList } from "./components/AgentList.js";
+import { Directory } from "./components/Directory.js";
 import { OPERATOR_TWITTER_HANDLE, OPERATOR_TWITTER_URL, WALLET_FLOW_ENABLED } from "./config.js";
+
+/**
+ * Minimal pathname-based router. The SPA only has two routes (home + the
+ * directory listing) and we don't want to drag in react-router for that.
+ * Cloudflare Workers Static Assets rewrites unknown paths to index.html via
+ * not_found_handling = "single-page-application", so client-side navigation
+ * via history.pushState() resolves cleanly on reload too.
+ */
+function useRoute(): string {
+  const [path, setPath] = useState(() => window.location.pathname);
+  useEffect(() => {
+    const onPop = () => setPath(window.location.pathname);
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+  return path;
+}
+
+function navigate(href: string, e?: React.MouseEvent) {
+  if (e) e.preventDefault();
+  if (window.location.pathname !== href) {
+    window.history.pushState({}, "", href);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  }
+}
 
 export function App() {
   const { isConnected } = useAccount();
-  const showAgentList = WALLET_FLOW_ENABLED && isConnected;
+  const path = useRoute();
+  const isDirectory = path === "/directory" || path.startsWith("/directory/");
+  const showAgentList = !isDirectory && WALLET_FLOW_ENABLED && isConnected;
 
   return (
     <div className="shell">
       <header className="topbar">
-        <a href="/" className="brand">
+        <a href="/" className="brand" onClick={(e) => navigate("/", e)}>
           <span className="brand-mark">◼</span>
           <span className="brand-name">NORMIEAGENT</span>
         </a>
+        <nav className="nav">
+          <a
+            href="/directory"
+            className={`nav-link ${isDirectory ? "nav-link-active" : ""}`}
+            onClick={(e) => navigate("/directory", e)}
+          >
+            Directory
+          </a>
+        </nav>
         <ConnectButton />
       </header>
 
       <main className="body">
-        {showAgentList ? <AgentList /> : <Hero />}
+        {isDirectory ? <Directory /> : showAgentList ? <AgentList /> : <Hero />}
       </main>
 
       <footer className="footer">

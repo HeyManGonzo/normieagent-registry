@@ -6,6 +6,11 @@
  *                               --owner 0xabc... --target https://bannerite.com
  *   node scripts/admin.mjs list
  *   node scripts/admin.mjs remove --name uxje
+ *   node scripts/admin.mjs hide   --name uxje   # exclude from /directory
+ *   node scripts/admin.mjs show   --name uxje   # re-include in /directory
+ *
+ * Add `--hidden` to `add` to register a row that does not appear in the
+ * public /directory listing (e.g. operator-owned synthetics).
  *
  * Add `--remote` to operate against the deployed D1 + KV instead of the
  * local `.wrangler/state` SQLite + KV used by `wrangler dev`.
@@ -99,6 +104,7 @@ function cmdAdd(args) {
       "normie-id": { type: "string" },
       owner:       { type: "string" },
       target:      { type: "string" },
+      hidden:      { type: "boolean", default: false },
       remote:      { type: "boolean", default: false },
     }, strict: true,
   });
@@ -106,6 +112,7 @@ function cmdAdd(args) {
   const normieId = Number.parseInt(values["normie-id"] ?? "", 10);
   const owner = (values.owner ?? "").toLowerCase();
   const target = values.target ?? "";
+  const listed = values.hidden ? 0 : 1;
 
   if (!name) die("--name is required and must produce a valid DNS label");
   if (!Number.isFinite(normieId) || normieId <= 0) die("--normie-id must be a positive integer");
@@ -114,9 +121,11 @@ function cmdAdd(args) {
 
   const now = Math.floor(Date.now() / 1000);
   // Upsert: insert, or replace target_url + owner_wallet + updated_at on conflict.
+  // directory_listed is only touched on insert; existing rows keep their flag
+  // unless explicitly toggled via `hide` / `show`.
   const sql = `
-    INSERT INTO agent_routes (agent_name, normie_id, owner_wallet, target_url, active, registered_at, updated_at)
-    VALUES ('${name}', ${normieId}, '${owner}', '${target.replace(/'/g, "''")}', 1, ${now}, ${now})
+    INSERT INTO agent_routes (agent_name, normie_id, owner_wallet, target_url, active, directory_listed, registered_at, updated_at)
+    VALUES ('${name}', ${normieId}, '${owner}', '${target.replace(/'/g, "''")}', 1, ${listed}, ${now}, ${now})
     ON CONFLICT(agent_name) DO UPDATE SET
       normie_id    = excluded.normie_id,
       owner_wallet = excluded.owner_wallet,
@@ -125,11 +134,28 @@ function cmdAdd(args) {
       updated_at   = ${now};
   `.replace(/\s+/g, " ").trim();
 
-  console.log(`→ Upserting ${name} (#${normieId}) → ${target}`);
+  console.log(`→ Upserting ${name} (#${normieId}) → ${target}${values.hidden ? " [hidden from /directory]" : ""}`);
   d1Execute(sql, values.remote);
   console.log(`→ Warming KV cache at agent:${name}`);
   kvPut(`agent:${name}`, target, values.remote);
   console.log(`✓ Done. ${name}.normieagent.com now routes to ${target}`);
+}
+
+function cmdSetListed(args, listed) {
+  const { values } = parseArgs({
+    args, options: {
+      name:   { type: "string" },
+      remote: { type: "boolean", default: false },
+    }, strict: true,
+  });
+  const name = normaliseAgentName(values.name ?? "");
+  if (!name) die("--name is required");
+  const now = Math.floor(Date.now() / 1000);
+  d1Execute(
+    `UPDATE agent_routes SET directory_listed = ${listed}, updated_at = ${now} WHERE agent_name = '${name}';`,
+    values.remote,
+  );
+  console.log(`✓ ${name}.normieagent.com is now ${listed === 1 ? "listed in" : "hidden from"} /directory`);
 }
 
 function cmdList(args) {
@@ -137,7 +163,7 @@ function cmdList(args) {
     args, options: { remote: { type: "boolean", default: false } }, strict: true,
   });
   d1Execute(
-    "SELECT agent_name, normie_id, owner_wallet, target_url, active, updated_at FROM agent_routes ORDER BY updated_at DESC;",
+    "SELECT agent_name, normie_id, owner_wallet, target_url, active, directory_listed, updated_at FROM agent_routes ORDER BY updated_at DESC;",
     values.remote,
   );
 }
@@ -165,10 +191,14 @@ switch (sub) {
   case "add":    cmdAdd(rest); break;
   case "list":   cmdList(rest); break;
   case "remove": cmdRemove(rest); break;
+  case "hide":   cmdSetListed(rest, 0); break;
+  case "show":   cmdSetListed(rest, 1); break;
   default:
-    console.log("Usage: pnpm admin <add|list|remove> [options] [--remote]");
-    console.log("  add    --name <s> --normie-id <n> --owner <0x…> --target <url>");
+    console.log("Usage: pnpm admin <add|list|remove|hide|show> [options] [--remote]");
+    console.log("  add    --name <s> --normie-id <n> --owner <0x…> --target <url> [--hidden]");
     console.log("  list");
     console.log("  remove --name <s>");
+    console.log("  hide   --name <s>   (exclude from public /directory)");
+    console.log("  show   --name <s>   (re-include in public /directory)");
     process.exit(sub ? 1 : 0);
 }

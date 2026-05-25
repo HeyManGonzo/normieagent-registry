@@ -89,3 +89,19 @@ export function register(body: RegisterRequestBody): Promise<RegisterResponse> {
     body: JSON.stringify(body),
   });
 }
+
+export interface DirectoryEntry {
+  agentName: string;
+  normieId: number;
+  targetUrl: string;
+  subdomain: string;
+}
+
+export interface DirectoryResponse {
+  count: number;
+  entries: DirectoryEntry[];
+}
+
+export function getDirectory(): Promise<DirectoryResponse> {
+  return request<DirectoryResponse>("/api/directory", { method: "GET" });
+}

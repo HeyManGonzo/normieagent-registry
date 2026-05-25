@@ -3,12 +3,14 @@ main = "src/index.ts"
 compatibility_date = "2025-05-01"
 compatibility_flags = ["nodejs_compat"]
 
-# The api worker is dormant while WALLET_FLOW_ENABLED is false in the
-# frontend. When self-serve registration is turned on, uncomment the route
-# below to expose POST /api/* under the registry domain.
-# [[routes]]
-# pattern = "registry.normieagent.com/api/*"
-# zone_name = "normieagent.com"
+# Public read endpoints (GET /api/directory, GET /api/health) are exposed
+# under the registry SPA's hostname so the frontend can call them
+# same-origin. The /api/register and /api/routes/* write endpoints remain
+# unreachable to the public until WALLET_FLOW_ENABLED is flipped in the
+# frontend, but they're served by this worker either way.
+[[routes]]
+pattern = "registry.normieagent.com/api/*"
+zone_name = "normieagent.com"
 
 # Shared D1 + KV bindings — same database and namespace as the dispatch worker.
 [[d1_databases]]

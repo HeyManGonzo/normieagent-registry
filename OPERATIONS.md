@@ -61,6 +61,30 @@ Sets `active = 0` in D1 and deletes the KV key. The next request to
 
 To re-activate, just re-run `pnpm admin add` with the same name.
 
+### Public directory listing (`/directory`)
+
+Active rows are listed on `https://registry.normieagent.com/directory` by
+default. The page is fed by `GET /api/directory` which only returns
+`active = 1 AND directory_listed = 1` rows; owner wallet and contact email
+are never exposed.
+
+Opt a row out (e.g. operator-owned synthetic monitor targets, or on owner
+request):
+
+```powershell
+pnpm admin hide --name <agentname> --remote
+pnpm admin show --name <agentname> --remote
+```
+
+Or register a row pre-hidden:
+
+```powershell
+pnpm admin add --name <agentname> ... --hidden --remote
+```
+
+Edge cache TTL on `/api/directory` is 60s, so toggles propagate within ~1
+minute.
+
 ### Smoke-test after any change
 
 ```powershell

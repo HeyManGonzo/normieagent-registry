@@ -13,6 +13,7 @@ import {
   handleUpdateRoute,
 } from "./handlers/routes.js";
 import { handleStatus } from "./handlers/status.js";
+import { handleDirectory } from "./handlers/directory.js";
 
 /**
  * Match `/api/routes/:agentName` and return the captured name.
@@ -53,6 +54,11 @@ export default {
       // GET /api/routes?wallet=0x...
       if (path === "/api/routes" && request.method === "GET") {
         return handleListRoutes(request, env, origin);
+      }
+
+      // GET /api/directory — public listing of opted-in active routes.
+      if (path === "/api/directory" && request.method === "GET") {
+        return handleDirectory(env, origin);
       }
 
       // PUT/DELETE /api/routes/:agentName
