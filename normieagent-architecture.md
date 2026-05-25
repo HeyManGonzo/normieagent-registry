@@ -58,7 +58,8 @@ A separate record handles the root domain and the management dashboard:
 |------|------|-------|---------|
 | A | `*.normieagent.com` | `192.0.2.0` | Yes |
 | CNAME | `normieagent.com` | `normieagent.pages.dev` | Yes |
-| CNAME | `app.normieagent.com` | `normieagent.pages.dev` | Yes |
+| CNAME | `registry.normieagent.com` | Workers Static Assets (auto via Custom Domain) | Yes |
+| CNAME | `api.normieagent.com` | Management API Worker (auto via Custom Domain) | Yes |
 
 ---
 
@@ -176,7 +177,7 @@ On any update to the D1 registry (new registration, target URL change, deactivat
 
 ### 5. Management API — Cloudflare Worker
 
-A separate Worker handles the authenticated management API at `app.normieagent.com/api`. This is consumed by the registration frontend.
+A separate Worker handles the authenticated management API at `api.normieagent.com`. This is consumed by the registration frontend.
 
 **Endpoints:**
 
@@ -235,7 +236,7 @@ The subdomain stays live through transfers. The new owner inherits both the subd
 ## Registration Flow — End to End
 
 ```
-1. Holder visits app.normieagent.com
+1. Holder visits registry.normieagent.com
 2. Connects wallet (wagmi / ethers.js)
 3. Frontend fetches their awakened Normies from on-chain
 4. Holder selects a Normie (e.g. Gemel #6832) and enters target URL
@@ -265,7 +266,7 @@ docs, blog, support, help, cdn, assets, static, dev, staging
 
 ## Fallback Page
 
-When a request arrives at an unregistered subdomain, the Worker returns a branded 404 page explaining that no application has been registered for that agent yet, with a link to `app.normieagent.com` where the holder can register.
+When a request arrives at an unregistered subdomain, the Worker returns a branded 404 page explaining that no application has been registered for that agent yet, with a link to `registry.normieagent.com` where the holder can register.
 
 ---
 
@@ -308,6 +309,6 @@ For the Normies collection (10,000 Normies), traffic will be well within free ti
 | Registry database | Cloudflare D1 (SQLite) |
 | On-chain verification | Ethereum JSON-RPC via Alchemy/Infura |
 | Transfer detection | Cloudflare Cron Worker (every 5 minutes) |
-| Management frontend | Cloudflare Pages |
-| Management API | Cloudflare Worker at `app.normieagent.com/api` |
+| Management frontend | Cloudflare Workers Static Assets (`registry.normieagent.com`) |
+| Management API | Cloudflare Worker at `api.normieagent.com` |
 | Wallet auth | `eth_sign` message signing (wagmi + ethers.js) |
