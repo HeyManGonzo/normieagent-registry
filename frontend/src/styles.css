@@ -285,8 +285,19 @@ code {
   gap: 1rem;
   margin-top: 1rem;
 }
+.how-grid-claim {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+@media (max-width: 860px) {
+  .how-grid-claim {
+    grid-template-columns: 1fr 1fr;
+  }
+}
 @media (max-width: 640px) {
   .how-grid {
+    grid-template-columns: 1fr;
+  }
+  .how-grid-claim {
     grid-template-columns: 1fr;
   }
 }
@@ -1000,4 +1011,110 @@ code {
 }
 .verify-err {
   border-color: var(--err);
+}
+
+/* ───── Secondary button ───── */
+.btn-secondary {
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid var(--line);
+}
+.btn-secondary:hover:not(:disabled) {
+  background: var(--line);
+}
+
+/* ───── Sign page ───── */
+.sign {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 2rem 0 4rem;
+}
+.sign-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+.sign-message-block {
+  margin-top: 1.5rem;
+  border: 1px solid var(--fg);
+  background: var(--card);
+}
+.sign-message-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.85rem;
+  border-bottom: 1px solid var(--line);
+}
+.sign-message-label {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+.sign-copy-btn {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--fg);
+  cursor: pointer;
+  padding: 0.2rem 0.6rem;
+}
+.sign-copy-btn:hover {
+  background: var(--line);
+}
+.sign-message-pre {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  margin: 0;
+  padding: 0.85rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--fg);
+  background: var(--card);
+}
+.sign-message-note {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin: 0;
+  padding: 0.5rem 0.85rem;
+  border-top: 1px solid var(--line);
+}
+.sign-etherscan-cta {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-top: 1.25rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  background: var(--card);
+}
+.sign-etherscan-btn {
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.sign-etherscan-hint {
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+@media (max-width: 480px) {
+  .sign-etherscan-cta {
+    flex-direction: column;
+  }
+}
+.sign-sig-input {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  word-break: break-all;
+}
+.how-sign .how-tag {
+  color: var(--muted);
 }

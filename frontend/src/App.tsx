@@ -6,6 +6,7 @@ import { Directory } from "./components/Directory.js";
 import { VerifyEmail } from "./components/VerifyEmail.js";
 import { VerifyClaim } from "./components/VerifyClaim.js";
 import { ClaimForm } from "./components/ClaimForm.js";
+import { SignForm } from "./components/SignForm.js";
 import { Disclaimer } from "./components/Disclaimer.js";
 import { SetupGuide } from "./components/SetupGuide.js";
 import { navigate } from "./lib/navigation.js";
@@ -27,6 +28,7 @@ export function App() {
   const isVerifyEmail = path === "/verify-email";
   const isVerifyClaim = path === "/verify-claim";
   const isClaim = path === "/claim";
+  const isSign = path === "/sign";
   const isAccount = path === "/account";
   const isDisclaimer = path === "/disclaimer";
   const isSetup = path === "/setup";
@@ -53,6 +55,13 @@ export function App() {
               onClick={(e) => navigate("/claim", e)}
             >
               Claim
+            </a>
+            <a
+              href="/sign"
+              className={`nav-link ${isSign ? "nav-link-active" : ""}`}
+              onClick={(e) => navigate("/sign", e)}
+            >
+              Sign
             </a>
             <a
               href="/account"
@@ -85,6 +94,8 @@ export function App() {
           <VerifyEmail />
         ) : isClaim ? (
           <ClaimForm />
+        ) : isSign ? (
+          <SignForm />
         ) : isAccount ? (
           <AccountPage />
         ) : isDirectory ? (
@@ -291,7 +302,7 @@ function HowToRegister() {
     <section className="how">
       <h2 className="section-title">Pick your path</h2>
       <p className="hero-desc how-intro">
-        Two ways to register — same result, different trust model. Choose
+        Three ways to register — same result, different trust model. Choose
         whichever feels right for you.
       </p>
       <div className="how-grid how-grid-claim">
@@ -347,6 +358,33 @@ function HowToRegister() {
               GitHub
             </a>
             .
+          </p>
+        </div>
+
+        <div className="how-col how-sign">
+          <div className="how-tag">Sign anywhere · Free · Live now</div>
+          <p className="how-pitch">
+            Privacy-first option. Sign a message with any tool you already
+            trust — Etherscan, MetaMask, Rabby, Frame — without ever connecting
+            your wallet to this site.
+          </p>
+          <ol className="how-list">
+            <li>Enter your Normie # and target URL here.</li>
+            <li>Copy the generated message and sign it using Etherscan or your wallet.</li>
+            <li>Paste the signature back — subdomain goes live immediately.</li>
+          </ol>
+          <div className="how-cta">
+            <a
+              href="/sign"
+              className="btn"
+              onClick={(e) => navigate("/sign", e)}
+            >
+              Sign to register →
+            </a>
+          </div>
+          <p className="muted how-fineprint">
+            Free. No ETH required. Your wallet never touches this site —
+            only the signature does.
           </p>
         </div>
       </div>

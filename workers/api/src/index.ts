@@ -13,6 +13,7 @@ import {
   handleUpdateRoute,
 } from "./handlers/routes.js";
 import { handleStatus } from "./handlers/status.js";
+import { handleRegisterSigned } from "./handlers/register-signed.js";
 import { handleDirectory } from "./handlers/directory.js";
 import { handleVerifyEmail } from "./handlers/verify-email.js";
 import {
@@ -56,6 +57,11 @@ export default {
       // POST /api/register
       if (path === "/api/register" && request.method === "POST") {
         return handleRegister(request, env, origin);
+      }
+
+      // POST /api/register-signed — wallet-connection-free path (Etherscan / sign-anywhere)
+      if (path === "/api/register-signed" && request.method === "POST") {
+        return handleRegisterSigned(request, env, origin);
       }
 
       // GET /api/routes?wallet=0x...

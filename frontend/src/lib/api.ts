@@ -94,6 +94,22 @@ export function register(body: RegisterRequestBody): Promise<RegisterResponse> {
   });
 }
 
+export interface SignedRegisterRequestBody {
+  signature: string;
+  message: string;
+  normieId: number;
+  targetUrl: string;
+  description?: string | null;
+  contactEmail?: string | null;
+}
+
+export function registerSigned(body: SignedRegisterRequestBody): Promise<RegisterResponse> {
+  return request<RegisterResponse>("/api/register-signed", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
 export interface DirectoryEntry {
   agentName: string;
   normieId: number;

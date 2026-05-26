@@ -1,4 +1,4 @@
-import { verifyMessage, getAddress } from "viem";
+import { verifyMessage, recoverMessageAddress, getAddress } from "viem";
 
 /**
  * Authentication message format. The frontend assembles a message of this
@@ -20,6 +20,11 @@ import { verifyMessage, getAddress } from "viem";
 
 export const MESSAGE_PREFIX = "NormieAgent Registry Authentication" as const;
 export const MAX_MESSAGE_AGE_MS = 5 * 60 * 1000;
+
+// Separate prefix for the sign-anywhere (Etherscan) flow — no wallet field.
+export const SIGNATURE_MESSAGE_PREFIX = "NormieAgent Signature Registration" as const;
+// 30 minutes: enough time to navigate to Etherscan, sign, and return.
+export const MAX_SIGN_MESSAGE_AGE_MS = 30 * 60 * 1000;
 
 export type AuthAction = "register" | "update" | "deactivate";
 
@@ -118,4 +123,84 @@ export async function verifyAuthSignature(
 export function isMessageFresh(parsed: ParsedAuthMessage, nowMs = Date.now()): boolean {
   const age = nowMs - parsed.issuedAtMs;
   return age >= -30_000 && age <= MAX_MESSAGE_AGE_MS;
+}
+
+/**
+ * Parsed form of a "NormieAgent Signature Registration" message.
+ * No wallet field — the signer is recovered from the signature directly.
+ *
+ * Example message:
+ *
+ *   NormieAgent Signature Registration
+ *
+ *   Action: register
+ *   Normie: 6832
+ *   Target: https://myapp.vercel.app
+ *   Issued: 2026-05-24T19:00:00.000Z
+ */
+export interface ParsedSignatureMessage {
+  normieId: number;
+  target: string;
+  issuedAtMs: number;
+}
+
+/**
+ * Parse a signature-registration message. Returns null on any format error.
+ */
+export function parseSignatureMessage(message: string): ParsedSignatureMessage | null {
+  const lines = message.split("\n").map((l) => l.trim());
+  if (lines[0] !== SIGNATURE_MESSAGE_PREFIX) return null;
+
+  const fields = new Map<string, string>();
+  for (const line of lines.slice(1)) {
+    const colon = line.indexOf(":");
+    if (colon <= 0) continue;
+    const key = line.slice(0, colon).trim();
+    const value = line.slice(colon + 1).trim();
+    if (key && value) fields.set(key, value);
+  }
+
+  const normieRaw = fields.get("Normie");
+  const target = fields.get("Target");
+  const issued = fields.get("Issued");
+  if (!normieRaw || !target || !issued) return null;
+
+  const normieId = Number.parseInt(normieRaw, 10);
+  if (!Number.isInteger(normieId) || normieId <= 0) return null;
+
+  const issuedAtMs = Date.parse(issued);
+  if (!Number.isFinite(issuedAtMs)) return null;
+
+  return { normieId, target, issuedAtMs };
+}
+
+/**
+ * Returns true if a parsed signature message is within MAX_SIGN_MESSAGE_AGE_MS.
+ */
+export function isSignatureMessageFresh(
+  parsed: ParsedSignatureMessage,
+  nowMs = Date.now(),
+): boolean {
+  const age = nowMs - parsed.issuedAtMs;
+  return age >= -30_000 && age <= MAX_SIGN_MESSAGE_AGE_MS;
+}
+
+/**
+ * Recover the checksummed signer address from a personal_sign message +
+ * signature. Returns null on any failure (invalid sig, wrong format, etc.).
+ */
+export async function recoverMessageSigner(
+  message: string,
+  signature: string,
+): Promise<string | null> {
+  if (!signature.startsWith("0x")) return null;
+  try {
+    const address = await recoverMessageAddress({
+      message,
+      signature: signature as `0x${string}`,
+    });
+    return getAddress(address);
+  } catch {
+    return null;
+  }
 }

@@ -69,6 +69,20 @@ export interface NormiesBindingResponse {
 }
 
 /**
+ * Signature-only registration payload for the Etherscan / sign-anywhere flow.
+ * No wallet field — the signer address is recovered from the signature itself.
+ * The message uses the NormieAgent Signature Registration format (30-min window).
+ */
+export interface SignedRegisterRequestBody {
+  signature: string;
+  message: string;
+  normieId: number;
+  targetUrl: string;
+  description?: string | null;
+  contactEmail?: string | null;
+}
+
+/**
  * Authenticated registration request payload from the frontend.
  * The signature is over `message`; the recovered address must equal `wallet`.
  */
