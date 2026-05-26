@@ -36,7 +36,10 @@ function isValidEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s) && s.length <= 254;
 }
 
-export function SignForm() {
+/**
+ * inTab=true: skip page header/hero (used when embedded inside ClaimPage tabs).
+ */
+export function SignForm({ inTab = false }: { inTab?: boolean }) {
   const [normieId, setNormieId] = useState("");
   const [targetUrl, setTargetUrl] = useState("");
   const [description, setDescription] = useState("");
@@ -64,14 +67,7 @@ export function SignForm() {
       return;
     }
     const message = buildMessage(id, targetUrl.trim());
-    setStep({
-      kind: "sign",
-      message,
-      normieId: id,
-      targetUrl: targetUrl.trim(),
-      description: description.trim(),
-      email: email.trim(),
-    });
+    setStep({ kind: "sign", message, normieId: id, targetUrl: targetUrl.trim(), description: description.trim(), email: email.trim() });
     setSignature("");
     setSubmitError(null);
   }
@@ -120,17 +116,18 @@ export function SignForm() {
     }
   }
 
+  const Wrap = ({ children }: { children: React.ReactNode }) =>
+    inTab ? <>{children}</> : <section className="sign">{children}</section>;
+
   // ── Success ──────────────────────────────────────────────────────────────
   if (step.kind === "success") {
-    const subdomain = step.res.subdomain;
     return (
-      <section className="sign">
-        <p className="hero-eyebrow">SIGN TO REGISTER</p>
-        <h1 className="hero-title">YOU'RE LIVE</h1>
+      <Wrap>
+        {!inTab && <><p className="hero-eyebrow">SIGN TO REGISTER</p><h1 className="hero-title">YOU'RE LIVE</h1></>}
         <div className="verify-card verify-ok">
           <p className="verify-title">Registration confirmed ✓</p>
           <p>
-            <code>{subdomain}</code> is now pointing at{" "}
+            <code>{step.res.subdomain}</code> is now pointing at{" "}
             <code>{step.res.targetUrl}</code>.
           </p>
           <p>
@@ -143,7 +140,7 @@ export function SignForm() {
             </a>
           </p>
         </div>
-      </section>
+      </Wrap>
     );
   }
 
@@ -152,17 +149,18 @@ export function SignForm() {
     const isSubmitting = step.kind === "submitting";
     const { message } = step;
     return (
-      <section className="sign">
-        <p className="hero-eyebrow">SIGN TO REGISTER</p>
-        <h1 className="hero-title">STEP 2: SIGN THE MESSAGE</h1>
+      <Wrap>
+        {!inTab && (
+          <>
+            <p className="hero-eyebrow">SIGN TO REGISTER</p>
+            <h1 className="hero-title">STEP 2: SIGN THE MESSAGE</h1>
+          </>
+        )}
+        {inTab && <p className="sign-step-label">Step 2 — sign the message below and paste the signature</p>}
         <p className="hero-desc">
           Copy the message below, sign it with the wallet holding your Normie,
           then paste the signature here. You can sign using{" "}
-          <a
-            href={ETHERSCAN_SIGN_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+          <a href={ETHERSCAN_SIGN_URL} target="_blank" rel="noopener noreferrer">
             Etherscan Verified Signatures
           </a>{" "}
           or any tool that supports EIP-191 personal signing (MetaMask, Frame,
@@ -172,28 +170,18 @@ export function SignForm() {
         <div className="sign-message-block">
           <div className="sign-message-header">
             <span className="sign-message-label">Message to sign</span>
-            <button
-              type="button"
-              className="sign-copy-btn"
-              onClick={() => copyMessage(message)}
-            >
+            <button type="button" className="sign-copy-btn" onClick={() => copyMessage(message)}>
               {copied ? "Copied ✓" : "Copy"}
             </button>
           </div>
           <pre className="sign-message-pre">{message}</pre>
           <p className="sign-message-note">
-            This message is valid for <strong>30 minutes</strong> from when it
-            was generated. If it expires, go back and generate a new one.
+            Valid for <strong>30 minutes</strong>. If it expires, go back and generate a new one.
           </p>
         </div>
 
         <div className="sign-etherscan-cta">
-          <a
-            href={ETHERSCAN_SIGN_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn sign-etherscan-btn"
-          >
+          <a href={ETHERSCAN_SIGN_URL} target="_blank" rel="noopener noreferrer" className="btn sign-etherscan-btn">
             Sign on Etherscan →
           </a>
           <span className="sign-etherscan-hint">
@@ -204,9 +192,7 @@ export function SignForm() {
 
         <form className="sign-form" onSubmit={handleSubmit}>
           <div className="claim-field">
-            <label className="lbl" htmlFor="sf-signature">
-              Signature
-            </label>
+            <label className="lbl" htmlFor="sf-signature">Signature</label>
             <input
               id="sf-signature"
               className="input sign-sig-input"
@@ -218,9 +204,7 @@ export function SignForm() {
               spellCheck={false}
               autoComplete="off"
             />
-            <span className="claim-hint">
-              The 0x-prefixed hex signature produced by your wallet.
-            </span>
+            <span className="claim-hint">The 0x-prefixed hex signature produced by your wallet.</span>
           </div>
 
           {submitError && <p className="err">{submitError}</p>}
@@ -234,36 +218,33 @@ export function SignForm() {
             >
               ← Back
             </button>
-            <button
-              type="submit"
-              className="btn"
-              disabled={isSubmitting || !signature.trim()}
-            >
+            <button type="submit" className="btn" disabled={isSubmitting || !signature.trim()}>
               {isSubmitting ? "Verifying…" : "Register"}
             </button>
           </div>
         </form>
-      </section>
+      </Wrap>
     );
   }
 
   // ── Form step ─────────────────────────────────────────────────────────────
   return (
-    <section className="sign">
-      <p className="hero-eyebrow">SIGN TO REGISTER</p>
-      <h1 className="hero-title">REGISTER WITHOUT<br />CONNECTING HERE</h1>
-      <p className="hero-desc">
-        Own your privacy. Sign a message with the wallet holding your Normie
-        using any tool you trust — Etherscan, MetaMask, Rabby, Frame — without
-        ever connecting to this site. Your subdomain goes live immediately once
-        verified.
-      </p>
+    <Wrap>
+      {!inTab && (
+        <>
+          <p className="hero-eyebrow">SIGN TO REGISTER</p>
+          <h1 className="hero-title">REGISTER WITHOUT<br />CONNECTING HERE</h1>
+          <p className="hero-desc">
+            Own your privacy. Sign a message with the wallet holding your Normie
+            using any tool you trust — Etherscan, MetaMask, Rabby, Frame — without
+            ever connecting to this site.
+          </p>
+        </>
+      )}
 
       <form className="sign-form" onSubmit={handleGenerate}>
         <div className="claim-field">
-          <label className="lbl" htmlFor="sf-normie-id">
-            Normie #
-          </label>
+          <label className="lbl" htmlFor="sf-normie-id">Normie #</label>
           <input
             id="sf-normie-id"
             className="input"
@@ -281,9 +262,7 @@ export function SignForm() {
         </div>
 
         <div className="claim-field">
-          <label className="lbl" htmlFor="sf-target">
-            Target URL
-          </label>
+          <label className="lbl" htmlFor="sf-target">Target URL</label>
           <input
             id="sf-target"
             className="input"
@@ -293,15 +272,12 @@ export function SignForm() {
             onChange={(e) => setTargetUrl(e.target.value)}
             required
           />
-          <span className="claim-hint">
-            Where your subdomain should point. Must be <code>https://</code>.
-          </span>
+          <span className="claim-hint">Where your subdomain should point. Must be <code>https://</code>.</span>
         </div>
 
         <div className="claim-field">
           <label className="lbl" htmlFor="sf-description">
-            Description{" "}
-            <span className="claim-optional">(optional)</span>
+            Description <span className="claim-optional">(optional)</span>
           </label>
           <textarea
             id="sf-description"
@@ -313,9 +289,7 @@ export function SignForm() {
             onChange={(e) => setDescription(e.target.value)}
           />
           <div className="claim-field-footer">
-            <span className="claim-hint">
-              Shown in the public directory.
-            </span>
+            <span className="claim-hint">Shown in the public directory.</span>
             <span className={`char-counter ${description.length >= MAX_DESC ? "char-counter-limit" : ""}`}>
               {description.length} / {MAX_DESC}
             </span>
@@ -324,8 +298,7 @@ export function SignForm() {
 
         <div className="claim-field">
           <label className="lbl" htmlFor="sf-email">
-            Contact email{" "}
-            <span className="claim-optional">(optional)</span>
+            Contact email <span className="claim-optional">(optional)</span>
           </label>
           <input
             id="sf-email"
@@ -335,19 +308,13 @@ export function SignForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-          <span className="claim-hint">
-            For incident notifications only. Not shared publicly.
-          </span>
+          <span className="claim-hint">For incident notifications only. Not shared publicly.</span>
         </div>
 
         {formError && <p className="err">{formError}</p>}
 
         <div className="claim-actions">
-          <button
-            type="submit"
-            className="btn"
-            disabled={!normieId.trim() || !targetUrl.trim()}
-          >
+          <button type="submit" className="btn" disabled={!normieId.trim() || !targetUrl.trim()}>
             Generate message →
           </button>
           <span className="muted how-fineprint">
@@ -355,6 +322,6 @@ export function SignForm() {
           </span>
         </div>
       </form>
-    </section>
+    </Wrap>
   );
 }

@@ -321,11 +321,10 @@ code {
   margin-bottom: 0.2rem;
 }
 .how-now {
-  border-color: var(--fg);
+  border-color: var(--line);
 }
 .how-now .how-tag {
-  color: var(--fg);
-  font-weight: 700;
+  color: var(--muted);
 }
 .how-col p {
   margin: 0;
@@ -1011,6 +1010,81 @@ code {
 }
 .verify-err {
   border-color: var(--err);
+}
+
+/* ───── Claim / Register page ───── */
+.claim-page {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 2rem 0 4rem;
+}
+.reg-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  margin-top: 1.75rem;
+  border: 1px solid var(--line);
+}
+.reg-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  padding: 0.85rem 1rem;
+  background: var(--card);
+  border: none;
+  border-right: 1px solid var(--line);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+}
+.reg-tab:last-child {
+  border-right: none;
+}
+.reg-tab:hover:not(.reg-tab-active) {
+  background: var(--bg);
+}
+.reg-tab-active {
+  background: var(--fg);
+  color: var(--bg);
+}
+.reg-tab-name {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.reg-tab-sub {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+.reg-tab-active .reg-tab-sub {
+  opacity: 0.8;
+}
+.reg-tab-content {
+  border: 1px solid var(--line);
+  border-top: none;
+  padding: 1.5rem 1.25rem;
+  background: var(--card);
+}
+.reg-wallet-prompt {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+}
+.reg-wallet-prompt p {
+  margin: 0;
+  line-height: 1.55;
+}
+.sign-step-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin: 0 0 0.75rem;
 }
 
 /* ───── Secondary button ───── */

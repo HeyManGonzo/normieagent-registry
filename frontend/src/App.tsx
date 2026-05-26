@@ -5,8 +5,7 @@ import { AccountPage } from "./components/AccountPage.js";
 import { Directory } from "./components/Directory.js";
 import { VerifyEmail } from "./components/VerifyEmail.js";
 import { VerifyClaim } from "./components/VerifyClaim.js";
-import { ClaimForm } from "./components/ClaimForm.js";
-import { SignForm } from "./components/SignForm.js";
+import { ClaimPage } from "./components/ClaimPage.js";
 import { Disclaimer } from "./components/Disclaimer.js";
 import { SetupGuide } from "./components/SetupGuide.js";
 import { navigate } from "./lib/navigation.js";
@@ -27,8 +26,7 @@ export function App() {
   const isDirectory = path === "/directory" || path.startsWith("/directory/");
   const isVerifyEmail = path === "/verify-email";
   const isVerifyClaim = path === "/verify-claim";
-  const isClaim = path === "/claim";
-  const isSign = path === "/sign";
+  const isClaim = path === "/claim" || path === "/sign";
   const isAccount = path === "/account";
   const isDisclaimer = path === "/disclaimer";
   const isSetup = path === "/setup";
@@ -54,14 +52,7 @@ export function App() {
               className={`nav-link ${isClaim ? "nav-link-active" : ""}`}
               onClick={(e) => navigate("/claim", e)}
             >
-              Claim
-            </a>
-            <a
-              href="/sign"
-              className={`nav-link ${isSign ? "nav-link-active" : ""}`}
-              onClick={(e) => navigate("/sign", e)}
-            >
-              Sign
+              Register
             </a>
             <a
               href="/account"
@@ -93,9 +84,7 @@ export function App() {
         ) : isVerifyEmail ? (
           <VerifyEmail />
         ) : isClaim ? (
-          <ClaimForm />
-        ) : isSign ? (
-          <SignForm />
+          <ClaimPage />
         ) : isAccount ? (
           <AccountPage />
         ) : isDirectory ? (
@@ -302,89 +291,56 @@ function HowToRegister() {
     <section className="how">
       <h2 className="section-title">Pick your path</h2>
       <p className="hero-desc how-intro">
-        Three ways to register — same result, different trust model. Choose
-        whichever feels right for you.
+        Two ways to register — same result, free either way. Choose whichever
+        fits your workflow.
       </p>
-      <div className="how-grid how-grid-claim">
+      <div className="how-grid">
         <div className="how-col how-now">
-          <div className="how-tag">No wallet connection · 0.002 ETH</div>
+          <div className="how-tag">Connect Wallet · Free · Instant</div>
           <p className="how-pitch">
-            Don&apos;t want to connect your wallet to a website? Totally
-            understandable. You can register without ever connecting — just fill
-            out a form and send ETH directly from your Normie&apos;s wallet.
+            Connect the wallet holding your Normie and sign a single plaintext
+            message right here — no transaction, no gas, no fee. Your subdomain
+            goes live the moment you sign.
           </p>
           <ol className="how-list">
-            <li>Enter your Normie #, your target URL, your email, and your wallet address.</li>
-            <li>Click the verification link we send to your inbox.</li>
-            <li>Send <strong>0.002 ETH</strong> from your Normie&apos;s wallet to the deposit address shown.</li>
-            <li>We confirm on-chain that the wallet holds the Normie — subdomain goes live within minutes.</li>
+            <li>Click <strong>Register</strong> in the nav above.</li>
+            <li>Connect your wallet and sign a plaintext message.</li>
+            <li>Your subdomain goes live within a minute.</li>
           </ol>
           <div className="how-cta">
-            <a
-              href="/claim"
-              className="btn"
-              onClick={(e) => navigate("/claim", e)}
-            >
-              Claim your subdomain →
+            <a href="/claim" className="btn" onClick={(e) => navigate("/claim", e)}>
+              Register now →
             </a>
           </div>
           <p className="muted how-fineprint">
-            One-time fee covers infrastructure costs. You must send from the
-            exact wallet holding your Normie — that&apos;s how ownership is verified.
-            Sending from the wrong address will not activate the subdomain.
-          </p>
-        </div>
-
-        <div className="how-col how-soon">
-          <div className="how-tag">Connect wallet · Free · Live now</div>
-          <p className="how-pitch">
-            Prefer signing over sending? Connect the wallet holding your Normie
-            and sign a single plaintext message — no transaction, no gas, no fee.
-            Your subdomain goes live the moment you sign.
-          </p>
-          <ol className="how-list">
-            <li>Click <strong>Connect Wallet</strong> in the top right.</li>
-            <li>Sign a plaintext message (no transaction, no gas fees).</li>
-            <li>Your subdomain goes live within a minute.</li>
-          </ol>
-          <p className="muted how-fineprint">
-            Ownership is verified on-chain by your signature — nothing is
-            sent to us, and no ETH changes hands. Code is open and auditable on{" "}
-            <a
-              href="https://github.com/HeyManGonzo/normieagent-registry"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            Ownership verified on-chain by your signature — no ETH required,
+            no transaction sent. Code is open on{" "}
+            <a href="https://github.com/HeyManGonzo/normieagent-registry" target="_blank" rel="noopener noreferrer">
               GitHub
-            </a>
-            .
+            </a>.
           </p>
         </div>
 
         <div className="how-col how-sign">
-          <div className="how-tag">Sign anywhere · Free · Live now</div>
+          <div className="how-tag">Sign Anywhere · Free · No connection needed</div>
           <p className="how-pitch">
-            Privacy-first option. Sign a message with any tool you already
-            trust — Etherscan, MetaMask, Rabby, Frame — without ever connecting
-            your wallet to this site.
+            Privacy-first option. Sign a message using Etherscan, MetaMask, Rabby,
+            or Frame — without ever connecting your wallet to this site. Only the
+            signature crosses the wire.
           </p>
           <ol className="how-list">
-            <li>Enter your Normie # and target URL here.</li>
-            <li>Copy the generated message and sign it using Etherscan or your wallet.</li>
+            <li>Click <strong>Register</strong> and choose "Sign Anywhere".</li>
+            <li>Copy the generated message and sign it using any EIP-191 tool.</li>
             <li>Paste the signature back — subdomain goes live immediately.</li>
           </ol>
           <div className="how-cta">
-            <a
-              href="/sign"
-              className="btn"
-              onClick={(e) => navigate("/sign", e)}
-            >
+            <a href="/claim?tab=sign" className="btn" onClick={(e) => navigate("/claim?tab=sign", e)}>
               Sign to register →
             </a>
           </div>
           <p className="muted how-fineprint">
-            Free. No ETH required. Your wallet never touches this site —
-            only the signature does.
+            Your wallet never touches this site. Etherscan is the most
+            trusted signing tool in the ecosystem — use it with confidence.
           </p>
         </div>
       </div>
