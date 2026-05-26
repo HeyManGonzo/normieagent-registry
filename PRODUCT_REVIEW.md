@@ -154,19 +154,22 @@ This is the highest-complexity feature in the codebase — a multi-step email
 verification + ETH payment + on-chain detection pipeline with its own cron
 processor, pending claims table, and failure-recovery procedures.
 
-With the wallet-sign path being **free and live**, it is unclear what job the
-paid path does beyond covering infrastructure costs. The 0.002 ETH fee makes
-sense as a spam gate, but the complexity it adds to the user journey (email →
-verify → send ETH → wait for cron → live) is significant friction for a
-community project.
+The paid path exists for a specific reason: **some Normies holders will not
+connect a wallet to a third-party site**, and the ETH payment *is* the
+ownership proof. Only the wallet holding the Normie can send from it — so
+the transaction proves ownership without requiring a wallet connection or
+signature. The fee is not primarily a spam gate; it is an alternative
+verification mechanism for privacy-conscious holders.
 
-Options worth considering:
-- Keep it as a fallback for users who genuinely will not connect a wallet, but
-  stop promoting it as an equal path.
-- Replace the ETH fee with a simpler anti-spam mechanism (e.g. a CAPTCHA or
-  a signed message from a Normies holder on a burner wallet).
-- Retire it once the wallet-sign path reaches critical mass and spam is not a
-  real problem.
+This is a legitimate and intentional design decision. The complexity is
+justified by the audience it serves.
+
+What to reconsider instead:
+- The UX of the paid path could be smoother — the gap between "ETH sent"
+  and "agent live" (waiting for cron) is opaque to the user. A status page
+  or email confirmation on cron pickup would help.
+- The two paths should be presented with clearer framing: wallet-sign as
+  the fast path, pay-to-claim as the privacy-preserving alternative.
 
 ### The WIP banner
 
