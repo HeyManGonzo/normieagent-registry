@@ -237,14 +237,15 @@ function renderVerificationHtml({ subdomain, verifyUrl }) {
 async function cmdAdd(args) {
   const { values } = parseArgs({
     args, options: {
-      name:        { type: "string" },
-      "normie-id": { type: "string" },
-      owner:       { type: "string" },
-      target:      { type: "string" },
-      email:       { type: "string" },
-      hidden:      { type: "boolean", default: false },
-      "no-send":   { type: "boolean", default: false },
-      remote:      { type: "boolean", default: false },
+      name:          { type: "string" },
+      "normie-id":   { type: "string" },
+      owner:         { type: "string" },
+      target:        { type: "string" },
+      email:         { type: "string" },
+      description:   { type: "string" },
+      hidden:        { type: "boolean", default: false },
+      "no-send":     { type: "boolean", default: false },
+      remote:        { type: "boolean", default: false },
     }, strict: true,
   });
   const name = normaliseAgentName(values.name ?? "");
@@ -253,6 +254,7 @@ async function cmdAdd(args) {
   const target = values.target ?? "";
   const email = (values.email ?? "").trim();
   const listed = values.hidden ? 0 : 1;
+  const description = (values.description ?? "").trim().slice(0, 200) || null;
 
   if (!name) die("--name is required and must produce a valid DNS label");
   if (!Number.isFinite(normieId) || normieId <= 0) die("--normie-id must be a positive integer");
@@ -281,14 +283,15 @@ async function cmdAdd(args) {
   const tokenSql      = token ? `'${token}'` : "NULL";
   const sentAtSql     = token ? `${now}`     : (emailChanged ? "NULL" : "email_verification_sent_at");
 
+  const descriptionSql = description ? `'${esc(description)}'` : "NULL";
   const sql = `
     INSERT INTO agent_routes (
-      agent_name, normie_id, owner_wallet, target_url, active, directory_listed,
+      agent_name, normie_id, owner_wallet, target_url, description, active, directory_listed,
       contact_email, email_verified_at, email_verification_token, email_verification_sent_at,
       registered_at, updated_at
     )
     VALUES (
-      '${name}', ${normieId}, '${owner}', '${esc(target)}', 1, ${listed},
+      '${name}', ${normieId}, '${owner}', '${esc(target)}', ${descriptionSql}, 1, ${listed},
       '${esc(email)}', NULL, ${token ? `'${token}'` : "NULL"}, ${token ? `${now}` : "NULL"},
       ${now}, ${now}
     )
@@ -296,6 +299,7 @@ async function cmdAdd(args) {
       normie_id                  = excluded.normie_id,
       owner_wallet               = excluded.owner_wallet,
       target_url                 = excluded.target_url,
+      description                = excluded.description,
       active                     = 1,
       contact_email              = excluded.contact_email,
       email_verified_at          = ${verifiedAtSql},
@@ -530,6 +534,40 @@ function cmdRemove(args) {
   console.log(`✓ Deactivated ${name}.normieagent.com`);
 }
 
+/**
+ * update-description --name <agentName> --description <text>
+ *
+ * Sets or clears the public description for an existing agent_routes row.
+ * Pass --description "" to clear it.
+ */
+function cmdUpdateDescription(args) {
+  const { values } = parseArgs({
+    args, options: {
+      name:        { type: "string" },
+      description: { type: "string" },
+      remote:      { type: "boolean", default: false },
+    }, strict: true,
+  });
+  const name = normaliseAgentName(values.name ?? "");
+  if (!name) die("--name is required");
+  if (values.description === undefined) die("--description is required (pass empty string to clear)");
+
+  const desc = values.description.trim().slice(0, 200);
+  const esc = (v) => String(v).replace(/'/g, "''");
+  const descSql = desc ? `'${esc(desc)}'` : "NULL";
+  const now = Math.floor(Date.now() / 1000);
+
+  d1Execute(
+    `UPDATE agent_routes
+        SET description = ${descSql}, updated_at = ${now}
+      WHERE agent_name = '${name}';`,
+    values.remote,
+  );
+  console.log(desc
+    ? `✓ Description set for ${name}.normieagent.com`
+    : `✓ Description cleared for ${name}.normieagent.com`);
+}
+
 const [, , sub, ...rest] = process.argv;
 const run = async () => {
   switch (sub) {
@@ -538,6 +576,7 @@ const run = async () => {
     case "remove":                     cmdRemove(rest); break;
     case "hide":                       cmdSetListed(rest, 0); break;
     case "show":                       cmdSetListed(rest, 1); break;
+    case "update-description":         cmdUpdateDescription(rest); break;
     case "resend-verification":        await cmdResendVerification(rest); break;
     case "list-claims":                cmdListClaims(rest); break;
     case "resend-claim-verification":  await cmdResendClaimVerification(rest); break;
@@ -545,11 +584,12 @@ const run = async () => {
       console.log("Usage: pnpm admin <command> [options] [--remote]");
       console.log("");
       console.log("agent_routes commands:");
-      console.log("  add    --name <s> --normie-id <n> --owner <0x…> --target <url> --email <e> [--hidden] [--no-send]");
+      console.log("  add    --name <s> --normie-id <n> --owner <0x…> --target <url> --email <e> [--hidden] [--no-send] [--description <s>]");
       console.log("  list");
       console.log("  remove --name <s>");
-      console.log("  hide   --name <s>      (exclude from public /directory)");
-      console.log("  show   --name <s>      (re-include in public /directory)");
+      console.log("  hide   --name <s>         (exclude from public /directory)");
+      console.log("  show   --name <s>         (re-include in public /directory)");
+      console.log("  update-description --name <s> --description <text>   (set or clear agent blurb)");
       console.log("  resend-verification --name <s>   (send a fresh verify-email link)");
       console.log("");
       console.log("pending_claims commands:");

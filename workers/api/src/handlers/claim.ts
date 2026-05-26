@@ -93,6 +93,12 @@ export async function handleCreateClaim(
     return errorResponse("Invalid fromWallet address", 400, origin);
   }
 
+  const rawDescription = typeof body.description === "string" ? body.description.trim() : null;
+  if (rawDescription && rawDescription.length > 200) {
+    return errorResponse("description must be 200 characters or fewer", 400, origin);
+  }
+  const description = rawDescription || null;
+
   let target: URL;
   try {
     target = new URL(targetUrl);
@@ -178,12 +184,12 @@ export async function handleCreateClaim(
 
   const inserted = await env.DB.prepare(
     `INSERT INTO pending_claims
-       (agent_name, normie_id, from_wallet, target_url, contact_email,
+       (agent_name, normie_id, from_wallet, target_url, description, contact_email,
         amount_wei, deposit_address, status,
         email_verification_token, email_verification_sent_at,
         expires_at, created_at, updated_at)
-     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'awaiting_email',
-             ?8, ?9, ?10, ?9, ?9)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 'awaiting_email',
+             ?9, ?10, ?11, ?10, ?10)
      RETURNING id`,
   )
     .bind(
@@ -191,6 +197,7 @@ export async function handleCreateClaim(
       normieId,
       fromWalletLower,
       targetUrl,
+      description,
       contactEmail,
       amountWei,
       depositAddress,

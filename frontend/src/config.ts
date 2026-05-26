@@ -6,7 +6,7 @@
  * the admin CLI while the service is small. Flip WALLET_FLOW_ENABLED to true
  * once we want users to register themselves on-chain.
  */
-export const WALLET_FLOW_ENABLED = false;
+export const WALLET_FLOW_ENABLED = true;
 
 /**
  * Operator contact used in the manual-registration CTA shown while

@@ -56,6 +56,12 @@ export async function handleRegister(
     return errorResponse("Missing required fields", 400, origin);
   }
 
+  const rawDescription = typeof body.description === "string" ? body.description.trim() : null;
+  if (rawDescription && rawDescription.length > 200) {
+    return errorResponse("description must be 200 characters or fewer", 400, origin);
+  }
+  const description = rawDescription || null;
+
   const recovered = await verifyAuthSignature(wallet, message, signature);
   if (!recovered) return errorResponse("Invalid signature", 401, origin);
 
@@ -117,15 +123,16 @@ export async function handleRegister(
   try {
     await env.DB.prepare(
       `INSERT INTO agent_routes
-         (agent_name, normie_id, owner_wallet, target_url, active, registered_at, updated_at)
-       VALUES (?1, ?2, ?3, ?4, 1, ?5, ?5)
+         (agent_name, normie_id, owner_wallet, target_url, description, active, registered_at, updated_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, 1, ?6, ?6)
        ON CONFLICT(normie_id) DO UPDATE SET
          target_url   = excluded.target_url,
          owner_wallet = excluded.owner_wallet,
+         description  = excluded.description,
          active       = 1,
          updated_at   = excluded.updated_at`,
     )
-      .bind(agentName, normieId, recovered.toLowerCase(), targetUrl, now)
+      .bind(agentName, normieId, recovered.toLowerCase(), targetUrl, description, now)
       .run();
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

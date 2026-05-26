@@ -1,5 +1,6 @@
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { WALLET_FLOW_ENABLED } from "../config.js";
+import { navigate } from "../lib/navigation.js";
 
 function shorten(addr: string): string {
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
@@ -31,9 +32,14 @@ export function ConnectButton() {
   if (isConnected && address) {
     return (
       <div className="connect">
-        <span className="addr" title={address}>
+        <a
+          href="/account"
+          className="addr addr-link"
+          title={`${address} — manage your agents`}
+          onClick={(e) => navigate("/account", e)}
+        >
           {shorten(address)}
-        </span>
+        </a>
         <button className="btn-ghost" onClick={() => disconnect()} type="button">
           Disconnect
         </button>

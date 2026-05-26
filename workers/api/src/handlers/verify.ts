@@ -19,6 +19,7 @@ interface VerifyResultEntry {
   reserved: boolean;
   alreadyRegistered: boolean;
   currentTargetUrl: string | null;
+  currentDescription: string | null;
 }
 
 /**
@@ -91,17 +92,16 @@ async function buildEntry(
 
   const reserved = RESERVED_SUBDOMAINS.has(agentName);
 
-  // Use KV first; fall back to D1 so the response is correct even when KV
-  // hasn't been warmed yet.
-  let currentTargetUrl = await env.AGENT_ROUTES_KV.get(agentRouteKey(agentName));
-  if (!currentTargetUrl) {
-    const row = await env.DB.prepare(
-      "SELECT target_url FROM agent_routes WHERE agent_name = ?1 AND active = 1",
-    )
-      .bind(agentName)
-      .first<{ target_url: string }>();
-    currentTargetUrl = row?.target_url ?? null;
-  }
+  // Always query D1 for both target_url and description (description is not
+  // cached in KV). KV is used by the dispatch worker for fast routing, not here.
+  const row = await env.DB.prepare(
+    "SELECT target_url, description FROM agent_routes WHERE agent_name = ?1 AND active = 1",
+  )
+    .bind(agentName)
+    .first<{ target_url: string; description: string | null }>();
+
+  // KV as a fallback for target_url only (guards against brief D1/KV skew).
+  const currentTargetUrl = row?.target_url ?? await env.AGENT_ROUTES_KV.get(agentRouteKey(agentName));
 
   return {
     normieId,
@@ -110,5 +110,6 @@ async function buildEntry(
     reserved,
     alreadyRegistered: currentTargetUrl !== null,
     currentTargetUrl,
+    currentDescription: row?.description ?? null,
   };
 }

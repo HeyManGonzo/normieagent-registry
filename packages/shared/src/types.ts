@@ -8,6 +8,7 @@ export interface AgentRoute {
   normie_id: number;
   owner_wallet: string;
   target_url: string;
+  description: string | null;
   active: 0 | 1;
   registered_at: number;
   updated_at: number;
@@ -77,6 +78,7 @@ export interface RegisterRequestBody {
   message: string;
   normieId: number;
   targetUrl: string;
+  description?: string | null;
 }
 
 /**
@@ -102,6 +104,7 @@ export interface PendingClaim {
   normie_id: number;
   from_wallet: string;
   target_url: string;
+  description: string | null;
   contact_email: string;
   amount_wei: string;
   deposit_address: string;
@@ -129,6 +132,7 @@ export interface ClaimRequestBody {
   targetUrl: string;
   contactEmail: string;
   fromWallet: string;
+  description?: string | null;
 }
 
 /**

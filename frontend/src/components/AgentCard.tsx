@@ -15,10 +15,13 @@ type Status =
   | { kind: "success"; subdomain: string }
   | { kind: "error"; message: string };
 
+const MAX_DESC = 200;
+
 export function AgentCard({ agent, refetch }: Props) {
   const { address } = useAccount();
   const { signMessageAsync } = useSignMessage();
   const [target, setTarget] = useState(agent.currentTargetUrl ?? "");
+  const [description, setDescription] = useState(agent.currentDescription ?? "");
   const [status, setStatus] = useState<Status>({ kind: "idle" });
 
   const subdomain = `${agent.agentName}.normieagent.com`;
@@ -46,6 +49,7 @@ export function AgentCard({ agent, refetch }: Props) {
         message,
         normieId: agent.normieId,
         targetUrl: target,
+        description: description.trim() || null,
       });
       setStatus({ kind: "success", subdomain: res.subdomain });
       refetch();
@@ -106,6 +110,23 @@ export function AgentCard({ agent, refetch }: Props) {
               required
               disabled={disabled}
             />
+            <label className="lbl" htmlFor={`desc-${agent.normieId}`}>
+              Description{" "}
+              <span className="card-optional">(optional)</span>
+            </label>
+            <textarea
+              id={`desc-${agent.normieId}`}
+              className="input card-textarea"
+              placeholder="What does your agent do? Who is it for?"
+              value={description}
+              maxLength={MAX_DESC}
+              rows={2}
+              onChange={(e) => setDescription(e.target.value)}
+              disabled={disabled}
+            />
+            <span className={`char-counter ${description.length >= MAX_DESC ? "char-counter-limit" : ""}`}>
+              {description.length} / {MAX_DESC}
+            </span>
             <button className="btn" type="submit" disabled={disabled}>
               {status.kind === "signing"
                 ? "Sign in wallet…"

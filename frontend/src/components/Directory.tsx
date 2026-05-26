@@ -78,6 +78,9 @@ function DirectoryList({ entries }: { entries: DirectoryEntry[] }) {
             <div className="dir-meta">
               <span className="dir-name">{e.subdomain}</span>
               <span className="dir-id">Normie #{e.normieId}</span>
+              {e.description && (
+                <span className="dir-desc">{e.description}</span>
+              )}
             </div>
           </a>
         </li>

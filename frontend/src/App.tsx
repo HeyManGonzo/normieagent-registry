@@ -1,19 +1,14 @@
 import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import { ConnectButton } from "./components/ConnectButton.js";
-import { AgentList } from "./components/AgentList.js";
+import { AccountPage } from "./components/AccountPage.js";
 import { Directory } from "./components/Directory.js";
 import { VerifyEmail } from "./components/VerifyEmail.js";
 import { VerifyClaim } from "./components/VerifyClaim.js";
-import { OPERATOR_TWITTER_HANDLE, OPERATOR_TWITTER_URL, WALLET_FLOW_ENABLED } from "./config.js";
+import { ClaimForm } from "./components/ClaimForm.js";
+import { navigate } from "./lib/navigation.js";
+import { OPERATOR_TWITTER_HANDLE, OPERATOR_TWITTER_URL } from "./config.js";
 
-/**
- * Minimal pathname-based router. The SPA only has two routes (home + the
- * directory listing) and we don't want to drag in react-router for that.
- * Cloudflare Workers Static Assets rewrites unknown paths to index.html via
- * not_found_handling = "single-page-application", so client-side navigation
- * via history.pushState() resolves cleanly on reload too.
- */
 function useRoute(): string {
   const [path, setPath] = useState(() => window.location.pathname);
   useEffect(() => {
@@ -24,39 +19,46 @@ function useRoute(): string {
   return path;
 }
 
-function navigate(href: string, e?: React.MouseEvent) {
-  if (e) e.preventDefault();
-  if (window.location.pathname !== href) {
-    window.history.pushState({}, "", href);
-    window.dispatchEvent(new PopStateEvent("popstate"));
-  }
-}
-
 export function App() {
-  const { isConnected } = useAccount();
   const path = useRoute();
   const isDirectory = path === "/directory" || path.startsWith("/directory/");
   const isVerifyEmail = path === "/verify-email";
   const isVerifyClaim = path === "/verify-claim";
-  const showAgentList =
-    !isDirectory && !isVerifyEmail && !isVerifyClaim && WALLET_FLOW_ENABLED && isConnected;
+  const isClaim = path === "/claim";
+  const isAccount = path === "/account";
 
   return (
     <div className="shell">
       <header className="topbar">
-        <a href="/" className="brand" onClick={(e) => navigate("/", e)}>
-          <span className="brand-mark">◼</span>
-          <span className="brand-name">NORMIEAGENT</span>
-        </a>
-        <nav className="nav">
-          <a
-            href="/directory"
-            className={`nav-link ${isDirectory ? "nav-link-active" : ""}`}
-            onClick={(e) => navigate("/directory", e)}
-          >
-            Directory
+        <div className="topbar-left">
+          <a href="/" className="brand" title="Home" onClick={(e) => navigate("/", e)}>
+            <span className="brand-mark">◼</span>
+            <span className="brand-name">NORMIEAGENT</span>
           </a>
-        </nav>
+          <nav className="nav">
+            <a
+              href="/directory"
+              className={`nav-link ${isDirectory ? "nav-link-active" : ""}`}
+              onClick={(e) => navigate("/directory", e)}
+            >
+              Directory
+            </a>
+            <a
+              href="/claim"
+              className={`nav-link ${isClaim ? "nav-link-active" : ""}`}
+              onClick={(e) => navigate("/claim", e)}
+            >
+              Claim
+            </a>
+            <a
+              href="/account"
+              className={`nav-link ${isAccount ? "nav-link-active" : ""}`}
+              onClick={(e) => navigate("/account", e)}
+            >
+              Account
+            </a>
+          </nav>
+        </div>
         <ConnectButton />
       </header>
 
@@ -65,10 +67,12 @@ export function App() {
           <VerifyClaim />
         ) : isVerifyEmail ? (
           <VerifyEmail />
+        ) : isClaim ? (
+          <ClaimForm />
+        ) : isAccount ? (
+          <AccountPage />
         ) : isDirectory ? (
           <Directory />
-        ) : showAgentList ? (
-          <AgentList />
         ) : (
           <Hero />
         )}
@@ -114,6 +118,8 @@ export function App() {
 }
 
 function Hero() {
+  const { isConnected } = useAccount();
+
   return (
     <section className="hero">
       <p className="hero-eyebrow">NORMIEAGENT.COM</p>
@@ -129,6 +135,19 @@ function Hero() {
         <code>uxje.normieagent.com</code> or <code>gemel.normieagent.com</code>{" "}
         — and point it anywhere on the internet.
       </p>
+
+      {isConnected && (
+        <div className="manage-banner">
+          <span>Wallet connected —</span>{" "}
+          <a
+            href="/account"
+            className="manage-link"
+            onClick={(e) => navigate("/account", e)}
+          >
+            view and manage your agents →
+          </a>
+        </div>
+      )}
 
       <div className="compare">
         <div className="compare-col compare-bad">
@@ -216,36 +235,64 @@ function Infrastructure() {
 function HowToRegister() {
   return (
     <section className="how">
-      <h2 className="section-title">How to register</h2>
-      <div className="how-grid">
+      <h2 className="section-title">Pick your path</h2>
+      <p className="hero-desc how-intro">
+        Two ways to register — same result, different trust model. Choose
+        whichever feels right for you.
+      </p>
+      <div className="how-grid how-grid-claim">
         <div className="how-col how-now">
-          <div className="how-tag">Today · Manual</div>
-          <p>
-            Hit me up on X — <a href={OPERATOR_TWITTER_URL} target="_blank" rel="noopener noreferrer">@{OPERATOR_TWITTER_HANDLE}</a> —, preferably in our Normies group chat, I will then need from you
+          <div className="how-tag">No wallet connection · 0.002 ETH</div>
+          <p className="how-pitch">
+            Don&apos;t want to connect your wallet to a website? Totally
+            understandable. You can register without ever connecting — just fill
+            out a form and send ETH directly from your Normie&apos;s wallet.
           </p>
-          <ul className="how-list">
-            <li>The Normie # you hold</li>
-            <li>The URL you want it pointed to (e.g. your Vercel deployment)</li>
-          </ul>
-          <p>
-            I&apos;ll verify ownership on-chain and add{" "}
-            <code>your-agent.normieagent.com</code> to the registry by hand.
-            Usually within a day.
-          </p>
+          <ol className="how-list">
+            <li>Enter your Normie #, your target URL, your email, and your wallet address.</li>
+            <li>Click the verification link we send to your inbox.</li>
+            <li>Send <strong>0.002 ETH</strong> from your Normie&apos;s wallet to the deposit address shown.</li>
+            <li>We confirm on-chain that the wallet holds the Normie — subdomain goes live within minutes.</li>
+          </ol>
+          <div className="how-cta">
+            <a
+              href="/claim"
+              className="btn"
+              onClick={(e) => navigate("/claim", e)}
+            >
+              Claim your subdomain →
+            </a>
+          </div>
           <p className="muted how-fineprint">
-            Free for now. This may change later.
+            One-time fee covers infrastructure costs. You must send from the
+            exact wallet holding your Normie — that&apos;s how ownership is verified.
+            Sending from the wrong address will not activate the subdomain.
           </p>
         </div>
+
         <div className="how-col how-soon">
-          <div className="how-tag">Soon · Self-serve</div>
+          <div className="how-tag">Connect wallet · Free · Live now</div>
+          <p className="how-pitch">
+            Prefer signing over sending? Connect the wallet holding your Normie
+            and sign a single plaintext message — no transaction, no gas, no fee.
+            Your subdomain goes live the moment you sign.
+          </p>
           <ol className="how-list">
-            <li>Connect the wallet that holds your Normie.</li>
-            <li>Sign a plaintext message (no transaction, no gas).</li>
-            <li>Your subdomain goes live at the edge within a minute.</li>
+            <li>Click <strong>Connect Wallet</strong> in the top right.</li>
+            <li>Sign a plaintext message (no transaction, no gas fees).</li>
+            <li>Your subdomain goes live within a minute.</li>
           </ol>
           <p className="muted how-fineprint">
-            The signing flow is already built and verifiable on GitHub. It
-            just isn&apos;t turned on yet.
+            Ownership is verified on-chain by your signature — nothing is
+            sent to us, and no ETH changes hands. Code is open and auditable on{" "}
+            <a
+              href="https://github.com/HeyManGonzo/normieagent-registry"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              GitHub
+            </a>
+            .
           </p>
         </div>
       </div>

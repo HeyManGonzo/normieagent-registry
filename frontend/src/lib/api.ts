@@ -17,6 +17,7 @@ export interface VerifyAgent {
   reserved: boolean;
   alreadyRegistered: boolean;
   currentTargetUrl: string | null;
+  currentDescription: string | null;
 }
 
 export interface VerifyResponse {
@@ -30,6 +31,7 @@ export interface RegisterRequestBody {
   message: string;
   normieId: number;
   targetUrl: string;
+  description?: string | null;
 }
 
 export interface RegisterResponse {
@@ -94,6 +96,7 @@ export interface DirectoryEntry {
   agentName: string;
   normieId: number;
   subdomain: string;
+  description: string | null;
 }
 
 export interface DirectoryResponse {
@@ -149,6 +152,30 @@ export interface ClaimStatusResponse {
   emailVerifiedAt: number | null;
   txHash: string | null;
   failureReason: string | null;
+}
+
+export interface CreateClaimBody {
+  normieId: number;
+  targetUrl: string;
+  contactEmail: string;
+  fromWallet: string;
+  description?: string | null;
+}
+
+export interface CreateClaimResponse {
+  claimId: number;
+  agentName: string;
+  normieId: number;
+  contactEmail: string;
+  status: ClaimStatus;
+  expiresAt: number;
+}
+
+export function createClaim(body: CreateClaimBody): Promise<CreateClaimResponse> {
+  return request<CreateClaimResponse>("/api/claim", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
 
 export function verifyClaimEmail(token: string): Promise<VerifyClaimEmailResponse> {

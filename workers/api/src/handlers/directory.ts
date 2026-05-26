@@ -4,12 +4,14 @@ import { json } from "../http.js";
 interface DirectoryRow {
   agent_name: string;
   normie_id: number;
+  description: string | null;
 }
 
 interface DirectoryEntry {
   agentName: string;
   normieId: number;
   subdomain: string;
+  description: string | null;
 }
 
 /**
@@ -28,7 +30,7 @@ export async function handleDirectory(
   origin: string | null,
 ): Promise<Response> {
   const { results } = await env.DB.prepare(
-    `SELECT agent_name, normie_id
+    `SELECT agent_name, normie_id, description
        FROM agent_routes
       WHERE active = 1 AND directory_listed = 1
       ORDER BY agent_name ASC`,
@@ -38,6 +40,7 @@ export async function handleDirectory(
     agentName: row.agent_name,
     normieId: row.normie_id,
     subdomain: `${row.agent_name}.normieagent.com`,
+    description: row.description ?? null,
   }));
 
   return json(
