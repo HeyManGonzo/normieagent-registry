@@ -25,6 +25,9 @@ Every command below assumes the repo root as the working directory and
 | List active pending claims | `pnpm admin list-claims --remote` |
 | List all pending claims (incl. terminal) | `pnpm admin list-claims --all --remote` |
 | Re-send a claim verification email | `pnpm admin resend-claim-verification --id <n> --remote` |
+| Set or clear an agent's public description | `pnpm admin update-description --name <s> --description "<text>" --remote` |
+| Add a DNS CNAME for a custom domain setup | `pnpm admin add-cname --name <s> --target <cname-target> --remote` |
+| Remove a DNS CNAME record | `pnpm admin remove-cname --name <s> --remote` |
 
 ### Worked examples
 
@@ -79,6 +82,24 @@ that's the symptom of a backslash in PowerShell or a backtick in Bash.
 
 In short: use `--no-send` for cosmetic changes (target URL, normie id typo),
 omit it for ownership/identity changes (new contact email).
+
+## Frontend pages reference
+
+| Path | Purpose |
+|---|---|
+| `/` | Homepage / hero with registration options |
+| `/directory` | Public directory of all active, listed agents |
+| `/claim` | Pay-to-claim registration form (0.002 ETH, no wallet connect needed) |
+| `/account` | Wallet-connected agent management (register, update URL/description/email) |
+| `/setup` | How the registry works + troubleshooting guide for agents |
+| `/disclaimer` | Legal disclaimer — no affiliation, liability, as-is, pricing through 2026 |
+| `/verify-email` | Landing page for email verification links (sent on `admin add`) |
+| `/verify-claim` | Landing page for claim email verification + payment status polling |
+
+**WIP banner:** A "Work in progress" bar sits just below the nav on every
+page, linking to `ramona@normieagent.com`. To remove it when the site is
+considered stable, delete the `<div className="wip-banner">…</div>` block in
+`frontend/src/App.tsx`, rebuild, and redeploy.
 
 ## Prerequisites
 
@@ -174,12 +195,44 @@ pnpm admin add --name <agentname> ... --hidden --remote
 Edge cache TTL on `/api/directory` is 60s, so toggles propagate within ~1
 minute.
 
+### Agent descriptions
+
+Every active registration can carry a short public description (≤200 chars)
+shown on `/directory` cards and on the agent's entry in the registry. Owners
+can set it themselves via the `/account` page (wallet-sign flow) or the
+`/claim` form (pay-to-claim flow). The operator can also set or clear it:
+
+```powershell
+# Set a description
+pnpm admin update-description `
+  --name gemel `
+  --description "I am your guide while you visit NFC Summit 2026 in Lisbon." `
+  --remote
+
+# Clear a description (pass an empty string)
+pnpm admin update-description --name gemel --description "" --remote
+```
+
+The directory page is edge-cached for 60s, so changes propagate within ~1 minute.
+
 ### Contact email + verification
 
 Every active registration carries a contact email so the operator has an
 out-of-band channel for incident notifications and ownership changes. The
 holder confirms the address via a tokenised link delivered through
 [Resend](https://resend.com).
+
+**How email gets onto a row:**
+- *Wallet-sign flow* — the `/account` page has an optional "Contact email"
+  field on each AgentCard. The owner can fill it in on first registration or
+  any subsequent update. It is stored without verification (wallet ownership
+  already proved identity).
+- *Pay-to-claim flow* — email is required before any ETH changes hands; it is
+  verified via a tokenised link before the deposit address is revealed. When
+  the cron promotes the claim to `agent_routes`, the verified email is copied
+  across automatically.
+- *Admin CLI* — `pnpm admin add --email <e>` sets the email and triggers
+  verification as described below.
 
 Resend API key — set both places (the worker doesn't currently send,
 `scripts/admin.mjs` does, but the secret is kept beside the worker's other
@@ -286,6 +339,77 @@ curl http://localhost:8787/run-claims
 | `failed_ownership` | Normie sold after claim was submitted but before payment landed | Refund ETH to `from_wallet`; operator must manually add if new owner wants to claim |
 | `failed_other` | Agent name collision or DB error | Check `failure_reason` from `list-claims --all`; refund if needed; fix and re-run `add` |
 | `expired` | 24-hour TTL elapsed before payment | Refund if ETH was sent; user must submit a new claim |
+
+### Custom domain setup (DNS CNAME)
+
+By default, `[agent-name].normieagent.com` is served by the dispatch Worker,
+which reverse-proxies requests to the registered target URL. This works for
+most simple sites but has edge cases (hardcoded absolute links, redirects,
+CORS) documented on `/setup`.
+
+For owners who want zero proxy overhead — canonical URLs, auth cookies, SEO
+all living natively on their normieagent.com address — the cleanest approach
+is to add a **DNS-only CNAME** record pointing directly to their hosting
+platform. The hosting platform then serves the content directly; the dispatch
+Worker is bypassed entirely for that subdomain.
+
+#### Prerequisites
+
+Add to `workers/api/.dev.vars` (gitignored, never committed):
+
+```
+CLOUDFLARE_API_TOKEN=<token with Zone:DNS:Edit for normieagent.com>
+CLOUDFLARE_ZONE_ID=<zone id from Cloudflare dashboard → normieagent.com overview → right sidebar>
+```
+
+Create the API token at **Cloudflare dashboard → My Profile → API Tokens →
+Create Token → "Edit zone DNS" template → scope to `normieagent.com` only**.
+
+#### Full flow
+
+1. **Owner adds the subdomain as a custom domain on their hosting platform.**
+   Vercel, Netlify, and Framer all have a "Custom domains" section in their
+   project settings. They enter `gemel.normieagent.com`.
+
+2. **Platform gives them a CNAME target**, e.g. `cname.vercel-dns.com`.
+
+3. **Operator adds the DNS record** (from repo root):
+
+   ```powershell
+   pnpm admin add-cname --name gemel --target cname.vercel-dns.com
+   ```
+
+   This adds a DNS-only (unproxied, grey-cloud) CNAME record to the
+   `normieagent.com` zone via the Cloudflare API. The hosting platform's
+   domain verifier can now see it and will issue a TLS certificate.
+
+4. **Owner verifies the domain** on their hosting platform. Once verified,
+   their platform serves the content directly under `gemel.normieagent.com`.
+
+5. **Owner updates their target URL** (via `/account` page or admin CLI) to
+   `https://gemel.normieagent.com` — this is now the canonical address, and
+   the dispatch Worker's proxy path is no longer involved.
+
+#### Updating an existing CNAME
+
+Running `add-cname` on a name that already has a CNAME record will update it
+in-place (PUT, not duplicate):
+
+```powershell
+pnpm admin add-cname --name gemel --target new-target.netlify.app
+```
+
+#### Removing a CNAME
+
+When an owner deactivates the custom domain setup (e.g. switches hosting
+platform and wants to go back to the proxy path):
+
+```powershell
+pnpm admin remove-cname --name gemel
+```
+
+Then update their target URL back to the new platform's `*.vercel.app` /
+`*.netlify.app` URL via the admin `add` command or `/account` page.
 
 ### Smoke-test after any change
 
