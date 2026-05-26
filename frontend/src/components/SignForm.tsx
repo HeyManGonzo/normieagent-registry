@@ -116,13 +116,10 @@ export function SignForm({ inTab = false }: { inTab?: boolean }) {
     }
   }
 
-  const Wrap = ({ children }: { children: React.ReactNode }) =>
-    inTab ? <>{children}</> : <section className="sign">{children}</section>;
-
   // ── Success ──────────────────────────────────────────────────────────────
   if (step.kind === "success") {
-    return (
-      <Wrap>
+    const inner = (
+      <>
         {!inTab && <><p className="hero-eyebrow">SIGN TO REGISTER</p><h1 className="hero-title">YOU'RE LIVE</h1></>}
         <div className="verify-card verify-ok">
           <p className="verify-title">Registration confirmed ✓</p>
@@ -140,16 +137,17 @@ export function SignForm({ inTab = false }: { inTab?: boolean }) {
             </a>
           </p>
         </div>
-      </Wrap>
+      </>
     );
+    return inTab ? inner : <section className="sign">{inner}</section>;
   }
 
   // ── Sign step ─────────────────────────────────────────────────────────────
   if (step.kind === "sign" || step.kind === "submitting") {
     const isSubmitting = step.kind === "submitting";
     const { message } = step;
-    return (
-      <Wrap>
+    const signInner = (
+      <>
         {!inTab && (
           <>
             <p className="hero-eyebrow">SIGN TO REGISTER</p>
@@ -223,13 +221,14 @@ export function SignForm({ inTab = false }: { inTab?: boolean }) {
             </button>
           </div>
         </form>
-      </Wrap>
+      </>
     );
+    return inTab ? signInner : <section className="sign">{signInner}</section>;
   }
 
   // ── Form step ─────────────────────────────────────────────────────────────
-  return (
-    <Wrap>
+  const formInner = (
+    <>
       {!inTab && (
         <>
           <p className="hero-eyebrow">SIGN TO REGISTER</p>
@@ -322,6 +321,7 @@ export function SignForm({ inTab = false }: { inTab?: boolean }) {
           </span>
         </div>
       </form>
-    </Wrap>
+    </>
   );
+  return inTab ? formInner : <section className="sign">{formInner}</section>;
 }
