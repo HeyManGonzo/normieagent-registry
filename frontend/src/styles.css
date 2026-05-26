@@ -431,6 +431,43 @@ code {
   word-break: break-all;
 }
 
+/* ───── Directory promo ───── */
+.dir-promo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin: 2rem 0;
+  padding: 1.25rem 1.4rem;
+  border: 1px solid var(--fg);
+  background: var(--card);
+  flex-wrap: wrap;
+}
+.dir-promo-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.dir-promo-title {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
+.dir-promo-sub {
+  font-size: 0.88rem;
+  color: var(--muted);
+  margin: 0;
+  max-width: 420px;
+}
+.dir-promo .btn {
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 /* ───── Hero manage banner ───── */
 .manage-banner {
   margin: 1rem 0;

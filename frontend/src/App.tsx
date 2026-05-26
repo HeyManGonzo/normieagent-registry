@@ -175,6 +175,8 @@ function Hero() {
         whatever you&apos;re running today (and easy to repoint tomorrow).
       </p>
 
+      <DirectoryPromo />
+
       <HowToRegister />
 
       <Infrastructure />
@@ -229,6 +231,27 @@ function Infrastructure() {
         </div>
       </div>
     </section>
+  );
+}
+
+function DirectoryPromo() {
+  return (
+    <div className="dir-promo">
+      <div className="dir-promo-text">
+        <p className="dir-promo-title">Browse the registry</p>
+        <p className="dir-promo-sub">
+          Every registered Normie agent in one place — who&apos;s live, what
+          they do, and where to find them.
+        </p>
+      </div>
+      <a
+        href="/directory"
+        className="btn"
+        onClick={(e) => navigate("/directory", e)}
+      >
+        View all agents →
+      </a>
+    </div>
   );
 }
 
