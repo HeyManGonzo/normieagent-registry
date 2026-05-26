@@ -18,6 +18,7 @@ export interface VerifyAgent {
   alreadyRegistered: boolean;
   currentTargetUrl: string | null;
   currentDescription: string | null;
+  currentContactEmail: string | null;
 }
 
 export interface VerifyResponse {
@@ -32,6 +33,7 @@ export interface RegisterRequestBody {
   normieId: number;
   targetUrl: string;
   description?: string | null;
+  contactEmail?: string | null;
 }
 
 export interface RegisterResponse {

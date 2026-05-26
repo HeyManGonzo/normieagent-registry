@@ -22,6 +22,7 @@ export function AgentCard({ agent, refetch }: Props) {
   const { signMessageAsync } = useSignMessage();
   const [target, setTarget] = useState(agent.currentTargetUrl ?? "");
   const [description, setDescription] = useState(agent.currentDescription ?? "");
+  const [email, setEmail] = useState(agent.currentContactEmail ?? "");
   const [status, setStatus] = useState<Status>({ kind: "idle" });
 
   const subdomain = `${agent.agentName}.normieagent.com`;
@@ -50,6 +51,7 @@ export function AgentCard({ agent, refetch }: Props) {
         normieId: agent.normieId,
         targetUrl: target,
         description: description.trim() || null,
+        contactEmail: email.trim() || null,
       });
       setStatus({ kind: "success", subdomain: res.subdomain });
       refetch();
@@ -126,6 +128,22 @@ export function AgentCard({ agent, refetch }: Props) {
             />
             <span className={`char-counter ${description.length >= MAX_DESC ? "char-counter-limit" : ""}`}>
               {description.length} / {MAX_DESC}
+            </span>
+            <label className="lbl" htmlFor={`email-${agent.normieId}`}>
+              Contact email{" "}
+              <span className="card-optional">(optional)</span>
+            </label>
+            <input
+              id={`email-${agent.normieId}`}
+              className="input"
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={disabled}
+            />
+            <span className="card-hint">
+              Private — used only to reach you about ownership changes or incidents. Never shown publicly.
             </span>
             <button className="btn" type="submit" disabled={disabled}>
               {status.kind === "signing"

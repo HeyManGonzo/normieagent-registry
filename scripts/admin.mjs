@@ -568,6 +568,121 @@ function cmdUpdateDescription(args) {
     : `✓ Description cleared for ${name}.normieagent.com`);
 }
 
+// ─── Cloudflare DNS helpers ───────────────────────────────────────────────────
+
+function getCfCredentials() {
+  const vars = loadDevVars();
+  const token   = process.env.CLOUDFLARE_API_TOKEN ?? vars.CLOUDFLARE_API_TOKEN;
+  const zoneId  = process.env.CLOUDFLARE_ZONE_ID   ?? vars.CLOUDFLARE_ZONE_ID;
+  if (!token)  die("CLOUDFLARE_API_TOKEN is not set (add it to workers/api/.dev.vars)");
+  if (!zoneId) die("CLOUDFLARE_ZONE_ID is not set (add it to workers/api/.dev.vars)");
+  return { token, zoneId };
+}
+
+async function cfDnsRequest(method, path, body, token) {
+  const res = await fetch(`https://api.cloudflare.com/client/v4${path}`, {
+    method,
+    headers: {
+      "authorization": `Bearer ${token}`,
+      "content-type": "application/json",
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const json = await res.json();
+  if (!json.success) {
+    const errs = (json.errors ?? []).map(e => `${e.code}: ${e.message}`).join(", ");
+    die(`Cloudflare API error: ${errs}`);
+  }
+  return json;
+}
+
+/**
+ * add-cname --name <agentName> --target <cnameTarget>
+ *
+ * Adds a DNS-only (unproxied) CNAME record for [name].normieagent.com
+ * pointing to [target]. Used when an owner wants to add their subdomain
+ * as a proper custom domain on their hosting platform (Vercel, Netlify, etc).
+ *
+ * Requires CLOUDFLARE_API_TOKEN and CLOUDFLARE_ZONE_ID in workers/api/.dev.vars.
+ */
+async function cmdAddCname(args) {
+  const { values } = parseArgs({
+    args, options: {
+      name:   { type: "string" },
+      target: { type: "string" },
+    }, strict: true,
+  });
+  const name = normaliseAgentName(values.name ?? "");
+  const target = (values.target ?? "").trim();
+  if (!name)   die("--name is required");
+  if (!target) die("--target is required (e.g. cname.vercel-dns.com)");
+
+  const { token, zoneId } = getCfCredentials();
+  const fqdn = `${name}.normieagent.com`;
+
+  // Check for an existing record first so we can update instead of duplicate.
+  const existing = await cfDnsRequest("GET",
+    `/zones/${zoneId}/dns_records?type=CNAME&name=${encodeURIComponent(fqdn)}`,
+    null, token,
+  );
+  const existingRecord = existing.result?.[0];
+
+  if (existingRecord) {
+    console.log(`→ Updating existing CNAME for ${fqdn} (was: ${existingRecord.content})`);
+    await cfDnsRequest("PUT",
+      `/zones/${zoneId}/dns_records/${existingRecord.id}`,
+      { type: "CNAME", name: fqdn, content: target, proxied: false, ttl: 1 },
+      token,
+    );
+  } else {
+    console.log(`→ Creating CNAME ${fqdn} → ${target} (DNS-only)`);
+    await cfDnsRequest("POST",
+      `/zones/${zoneId}/dns_records`,
+      { type: "CNAME", name: fqdn, content: target, proxied: false, ttl: 1 },
+      token,
+    );
+  }
+  console.log(`✓ DNS record set: ${fqdn} CNAME → ${target}`);
+  console.log(`  Hosting platform can now verify the domain. Once verified,`);
+  console.log(`  update the agent's target URL to https://${fqdn} via /account or 'pnpm admin add'.`);
+}
+
+/**
+ * remove-cname --name <agentName>
+ *
+ * Removes the DNS CNAME record for [name].normieagent.com.
+ * Use when an owner deactivates their custom domain setup.
+ */
+async function cmdRemoveCname(args) {
+  const { values } = parseArgs({
+    args, options: {
+      name: { type: "string" },
+    }, strict: true,
+  });
+  const name = normaliseAgentName(values.name ?? "");
+  if (!name) die("--name is required");
+
+  const { token, zoneId } = getCfCredentials();
+  const fqdn = `${name}.normieagent.com`;
+
+  const existing = await cfDnsRequest("GET",
+    `/zones/${zoneId}/dns_records?type=CNAME&name=${encodeURIComponent(fqdn)}`,
+    null, token,
+  );
+  const record = existing.result?.[0];
+
+  if (!record) {
+    console.log(`ℹ No CNAME record found for ${fqdn} — nothing to remove.`);
+    return;
+  }
+
+  await cfDnsRequest("DELETE",
+    `/zones/${zoneId}/dns_records/${record.id}`,
+    null, token,
+  );
+  console.log(`✓ CNAME record removed for ${fqdn}`);
+}
+
 const [, , sub, ...rest] = process.argv;
 const run = async () => {
   switch (sub) {
@@ -580,6 +695,8 @@ const run = async () => {
     case "resend-verification":        await cmdResendVerification(rest); break;
     case "list-claims":                cmdListClaims(rest); break;
     case "resend-claim-verification":  await cmdResendClaimVerification(rest); break;
+    case "add-cname":                  await cmdAddCname(rest); break;
+    case "remove-cname":               await cmdRemoveCname(rest); break;
     default:
       console.log("Usage: pnpm admin <command> [options] [--remote]");
       console.log("");
@@ -595,6 +712,10 @@ const run = async () => {
       console.log("pending_claims commands:");
       console.log("  list-claims [--all]    (show active claims; --all includes terminal rows)");
       console.log("  resend-claim-verification --id <n>   (re-send a claim verify email)");
+      console.log("");
+      console.log("DNS commands (requires CLOUDFLARE_API_TOKEN + CLOUDFLARE_ZONE_ID in .dev.vars):");
+      console.log("  add-cname    --name <s> --target <cname>   (add DNS-only CNAME for custom domain setup)");
+      console.log("  remove-cname --name <s>                    (remove the CNAME record)");
       process.exit(sub ? 1 : 0);
   }
 };

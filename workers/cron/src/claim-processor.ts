@@ -41,6 +41,7 @@ interface PendingClaimRow {
   from_wallet: string;
   target_url: string;
   description: string | null;
+  contact_email: string;
   amount_wei: string;
   expires_at: number;
 }
@@ -172,7 +173,7 @@ async function matchTxToClaim(
   // tx_hash assigned. If the same wallet has multiple in-flight claims (rare
   // but possible if they have multiple Normies), take the oldest one.
   const claim = await env.DB.prepare(
-    `SELECT id, agent_name, normie_id, from_wallet, target_url, description, amount_wei, expires_at
+    `SELECT id, agent_name, normie_id, from_wallet, target_url, description, contact_email, amount_wei, expires_at
        FROM pending_claims
       WHERE from_wallet = ?1
         AND amount_wei  = ?2
@@ -223,21 +224,23 @@ async function matchTxToClaim(
     await env.DB.batch([
       env.DB.prepare(
         `INSERT INTO agent_routes
-           (agent_name, normie_id, owner_wallet, target_url, description, active, registered_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, 1, ?6, ?6)
+           (agent_name, normie_id, owner_wallet, target_url, description, contact_email, active, registered_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, 1, ?7, ?7)
          ON CONFLICT(normie_id) DO UPDATE SET
-           agent_name   = excluded.agent_name,
-           owner_wallet = excluded.owner_wallet,
-           target_url   = excluded.target_url,
-           description  = excluded.description,
-           active       = 1,
-           updated_at   = excluded.updated_at`,
+           agent_name    = excluded.agent_name,
+           owner_wallet  = excluded.owner_wallet,
+           target_url    = excluded.target_url,
+           description   = excluded.description,
+           contact_email = excluded.contact_email,
+           active        = 1,
+           updated_at    = excluded.updated_at`,
       ).bind(
         claim.agent_name,
         claim.normie_id,
         expectedOwner,
         claim.target_url,
         claim.description,
+        claim.contact_email,
         now,
       ),
       env.DB.prepare(

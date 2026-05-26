@@ -80,6 +80,24 @@ code {
   padding: 0 1.5rem;
 }
 
+.wip-banner {
+  background: var(--fg);
+  color: var(--bg);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-align: center;
+  padding: 0.45rem 1rem;
+  letter-spacing: 0.02em;
+}
+.wip-banner a {
+  color: var(--bg);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.wip-banner a:hover {
+  opacity: 0.75;
+}
+
 .topbar {
   display: flex;
   justify-content: space-between;
@@ -328,6 +346,153 @@ code {
 .how-fineprint {
   font-size: 0.8rem;
   margin-top: 0.4rem !important;
+}
+
+/* ───── Setup Guide ───── */
+.guide {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 2rem 0 4rem;
+}
+.guide-name-note {
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--muted);
+  border-left: 3px solid var(--line);
+  padding-left: 0.85rem;
+  margin: 0.5rem 0 1.5rem;
+}
+.guide-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.guide-section {
+  border-top: 1px solid var(--line);
+  padding: 2rem 0;
+}
+.guide-section-last {
+  border-bottom: 1px solid var(--line);
+}
+.guide-heading {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg);
+  margin: 0 0 0.85rem 0;
+}
+.guide-section p {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--muted);
+  margin: 0 0 0.75rem 0;
+}
+.guide-section p:last-child {
+  margin-bottom: 0;
+}
+.guide-list {
+  margin: 0.5rem 0 0.75rem 1.25rem;
+  padding: 0;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--muted);
+}
+.guide-list li {
+  margin-bottom: 0.4rem;
+}
+.guide-platform-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+.guide-platform {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+}
+.guide-platform-name {
+  color: var(--fg);
+  font-weight: 600;
+}
+.guide-ok-badge {
+  color: var(--ok);
+}
+.guide-issue {
+  border-left: 2px solid var(--line);
+  padding-left: 1rem;
+  margin-bottom: 1.5rem;
+}
+.guide-issue:last-child {
+  margin-bottom: 0;
+}
+.guide-issue-title {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--fg) !important;
+  margin-bottom: 0.4rem !important;
+}
+.guide-ai-tip {
+  background: var(--card);
+  border: 1px solid var(--line);
+  padding: 0.6rem 0.8rem;
+  font-size: 0.85rem !important;
+  margin-top: 0.5rem;
+}
+
+/* ───── Disclaimer ───── */
+.disclaimer {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 2rem 0 4rem;
+}
+.disclaimer-date {
+  margin-bottom: 2.5rem;
+}
+.disclaimer-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.disclaimer-section {
+  border-top: 1px solid var(--line);
+  padding: 2rem 0;
+}
+.disclaimer-section-last {
+  border-bottom: 1px solid var(--line);
+}
+.disclaimer-heading {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg);
+  margin: 0 0 0.85rem 0;
+}
+.disclaimer-section p {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--muted);
+  margin: 0 0 0.75rem 0;
+}
+.disclaimer-section p:last-child {
+  margin-bottom: 0;
+}
+.disclaimer-list {
+  margin: 0.5rem 0 0.75rem 1.25rem;
+  padding: 0;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--muted);
+}
+.disclaimer-list li {
+  margin-bottom: 0.25rem;
 }
 
 /* ───── Infrastructure ───── */
@@ -765,6 +930,13 @@ code {
   color: var(--muted);
   font-weight: 400;
   font-size: 0.8em;
+}
+.card-hint {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 0.3rem;
+  line-height: 1.4;
 }
 .claim-actions {
   display: flex;

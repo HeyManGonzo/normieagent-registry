@@ -6,6 +6,8 @@ import { Directory } from "./components/Directory.js";
 import { VerifyEmail } from "./components/VerifyEmail.js";
 import { VerifyClaim } from "./components/VerifyClaim.js";
 import { ClaimForm } from "./components/ClaimForm.js";
+import { Disclaimer } from "./components/Disclaimer.js";
+import { SetupGuide } from "./components/SetupGuide.js";
 import { navigate } from "./lib/navigation.js";
 import { OPERATOR_TWITTER_HANDLE, OPERATOR_TWITTER_URL } from "./config.js";
 
@@ -26,6 +28,8 @@ export function App() {
   const isVerifyClaim = path === "/verify-claim";
   const isClaim = path === "/claim";
   const isAccount = path === "/account";
+  const isDisclaimer = path === "/disclaimer";
+  const isSetup = path === "/setup";
 
   return (
     <div className="shell">
@@ -57,10 +61,22 @@ export function App() {
             >
               Account
             </a>
+            <a
+              href="/setup"
+              className={`nav-link ${isSetup ? "nav-link-active" : ""}`}
+              onClick={(e) => navigate("/setup", e)}
+            >
+              Setup
+            </a>
           </nav>
         </div>
         <ConnectButton />
       </header>
+
+      <div className="wip-banner">
+        Work in progress — feedback welcome at{" "}
+        <a href="mailto:ramona@normieagent.com">ramona@normieagent.com</a>
+      </div>
 
       <main className="body">
         {isVerifyClaim ? (
@@ -73,6 +89,10 @@ export function App() {
           <AccountPage />
         ) : isDirectory ? (
           <Directory />
+        ) : isDisclaimer ? (
+          <Disclaimer />
+        ) : isSetup ? (
+          <SetupGuide />
         ) : (
           <Hero />
         )}
@@ -110,6 +130,17 @@ export function App() {
             rel="noopener noreferrer"
           >
             @heymangonzo
+          </a>
+          <span className="sep">·</span>
+          <a href="mailto:ramona@normieagent.com">
+            ramona@normieagent.com
+          </a>
+          <span className="sep">·</span>
+          <a
+            href="/disclaimer"
+            onClick={(e) => navigate("/disclaimer", e)}
+          >
+            Disclaimer
           </a>
         </div>
       </footer>

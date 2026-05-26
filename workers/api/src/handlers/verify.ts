@@ -20,6 +20,7 @@ interface VerifyResultEntry {
   alreadyRegistered: boolean;
   currentTargetUrl: string | null;
   currentDescription: string | null;
+  currentContactEmail: string | null;
 }
 
 /**
@@ -95,10 +96,10 @@ async function buildEntry(
   // Always query D1 for both target_url and description (description is not
   // cached in KV). KV is used by the dispatch worker for fast routing, not here.
   const row = await env.DB.prepare(
-    "SELECT target_url, description FROM agent_routes WHERE agent_name = ?1 AND active = 1",
+    "SELECT target_url, description, contact_email FROM agent_routes WHERE agent_name = ?1 AND active = 1",
   )
     .bind(agentName)
-    .first<{ target_url: string; description: string | null }>();
+    .first<{ target_url: string; description: string | null; contact_email: string | null }>();
 
   // KV as a fallback for target_url only (guards against brief D1/KV skew).
   const currentTargetUrl = row?.target_url ?? await env.AGENT_ROUTES_KV.get(agentRouteKey(agentName));
@@ -111,5 +112,6 @@ async function buildEntry(
     alreadyRegistered: currentTargetUrl !== null,
     currentTargetUrl,
     currentDescription: row?.description ?? null,
+    currentContactEmail: row?.contact_email ?? null,
   };
 }

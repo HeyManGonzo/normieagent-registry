@@ -62,6 +62,12 @@ export async function handleRegister(
   }
   const description = rawDescription || null;
 
+  const rawEmail = typeof body.contactEmail === "string" ? body.contactEmail.trim() : null;
+  if (rawEmail && rawEmail.length > 254) {
+    return errorResponse("contactEmail must be 254 characters or fewer", 400, origin);
+  }
+  const contactEmail = rawEmail || null;
+
   const recovered = await verifyAuthSignature(wallet, message, signature);
   if (!recovered) return errorResponse("Invalid signature", 401, origin);
 
@@ -123,16 +129,17 @@ export async function handleRegister(
   try {
     await env.DB.prepare(
       `INSERT INTO agent_routes
-         (agent_name, normie_id, owner_wallet, target_url, description, active, registered_at, updated_at)
-       VALUES (?1, ?2, ?3, ?4, ?5, 1, ?6, ?6)
+         (agent_name, normie_id, owner_wallet, target_url, description, contact_email, active, registered_at, updated_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, 1, ?7, ?7)
        ON CONFLICT(normie_id) DO UPDATE SET
-         target_url   = excluded.target_url,
-         owner_wallet = excluded.owner_wallet,
-         description  = excluded.description,
-         active       = 1,
-         updated_at   = excluded.updated_at`,
+         target_url    = excluded.target_url,
+         owner_wallet  = excluded.owner_wallet,
+         description   = excluded.description,
+         contact_email = COALESCE(excluded.contact_email, agent_routes.contact_email),
+         active        = 1,
+         updated_at    = excluded.updated_at`,
     )
-      .bind(agentName, normieId, recovered.toLowerCase(), targetUrl, description, now)
+      .bind(agentName, normieId, recovered.toLowerCase(), targetUrl, description, contactEmail, now)
       .run();
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

@@ -79,6 +79,7 @@ export interface RegisterRequestBody {
   normieId: number;
   targetUrl: string;
   description?: string | null;
+  contactEmail?: string | null;
 }
 
 /**
