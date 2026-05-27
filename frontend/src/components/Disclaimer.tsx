@@ -54,36 +54,13 @@ export function Disclaimer() {
         </div>
 
         <div className="disclaimer-section">
-          <h2 className="disclaimer-heading">Payments are non-refundable</h2>
-          <p>
-            The 0.002 ETH registration fee paid via the pay-to-claim path is
-            non-refundable once your subdomain has been activated. If a claim
-            cannot be fulfilled due to a verified error on our end (for example,
-            a technical failure after payment was received), we will make
-            reasonable efforts to either activate the subdomain or arrange a
-            refund.
-          </p>
-          <p>
-            Payments sent to the wrong address, in the wrong amount, or from a
-            wallet that does not hold the registered Normie at the time of
-            payment cannot be matched to a claim and will not be refunded.
-          </p>
-        </div>
-
-        <div className="disclaimer-section">
           <h2 className="disclaimer-heading">Current pricing and availability</h2>
           <p>
-            Both registration paths are available at the following rates through{" "}
-            <strong>31 December 2026</strong>:
+            Registration is free of charge. Both methods — connecting your
+            wallet directly and signing via a third-party tool such as Etherscan
+            — are available at no cost through{" "}
+            <strong>31 December 2026</strong>.
           </p>
-          <ul className="disclaimer-list">
-            <li>
-              <strong>Wallet-sign registration</strong> — free of charge.
-            </li>
-            <li>
-              <strong>Pay-to-claim registration</strong> — 0.002 ETH, one-time fee.
-            </li>
-          </ul>
           <p>
             Pricing and terms may change after 31 December 2026. Subdomains
             that are active and in good standing at that date will not be
