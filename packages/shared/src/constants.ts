@@ -52,6 +52,19 @@ export const RESERVED_SUBDOMAINS: ReadonlySet<string> = new Set([
 export const ROUTE_CACHE_TTL_SECONDS = 300 as const;
 
 /**
+ * Sentinel stored in KV when a subdomain lookup returns no result from D1.
+ * Prevents repeat bot probes from hitting D1 on every request.
+ * Value can never be confused with a real target URL (those always start with https://).
+ */
+export const NOT_FOUND_SENTINEL = "~" as const;
+
+/**
+ * KV TTL for not-found cache entries, in seconds.
+ * Short so a newly registered subdomain goes live within 60 seconds.
+ */
+export const NOT_FOUND_CACHE_TTL_SECONDS = 60 as const;
+
+/**
  * The apex domain. Used to extract the agent name from the Host header
  * and to recognise root / `app` traffic that should pass through.
  */

@@ -1,5 +1,7 @@
 import {
   APEX_DOMAIN,
+  NOT_FOUND_CACHE_TTL_SECONDS,
+  NOT_FOUND_SENTINEL,
   RESERVED_SUBDOMAINS,
   ROUTE_CACHE_TTL_SECONDS,
   agentRouteKey,
@@ -41,8 +43,9 @@ async function resolveTargetUrl(
 ): Promise<string | null> {
   const key = agentRouteKey(agentName);
 
-  // Fast path — KV cache.
+  // Fast path — KV cache (covers both known routes and cached not-found results).
   const cached = await env.AGENT_ROUTES_KV.get(key);
+  if (cached === NOT_FOUND_SENTINEL) return null;
   if (cached) return cached;
 
   // Cache miss — query D1.
@@ -52,10 +55,14 @@ async function resolveTargetUrl(
     .bind(agentName)
     .first<{ target_url: string }>();
 
-  if (!row) return null;
+  if (!row) {
+    // Cache the not-found result so repeat probes skip D1 for 60 seconds.
+    await env.AGENT_ROUTES_KV.put(key, NOT_FOUND_SENTINEL, {
+      expirationTtl: NOT_FOUND_CACHE_TTL_SECONDS,
+    });
+    return null;
+  }
 
-  // Backfill cache. Fire-and-forget would be nicer with waitUntil but the
-  // result of put() is small and we already have the row in hand.
   await env.AGENT_ROUTES_KV.put(key, row.target_url, {
     expirationTtl: ROUTE_CACHE_TTL_SECONDS,
   });
