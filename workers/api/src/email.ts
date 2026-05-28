@@ -8,6 +8,7 @@
  */
 
 const RESEND_FROM = "Normieagent Registry <noreply@normieagent.com>";
+const ADMIN_EMAIL = "ramona@normieagent.com";
 
 interface SendClaimVerificationEmailArgs {
   to: string;
@@ -63,6 +64,49 @@ export async function sendClaimVerificationEmail(
   }
   const parsed = (await res.json()) as { id?: string };
   return parsed.id ?? "";
+}
+
+interface SendRegistrationNotificationArgs {
+  agentName: string;
+  normieId: number;
+  targetUrl: string;
+  ownerWallet: string;
+  method: "wallet-sign" | "sign-anywhere";
+  resendApiKey: string;
+}
+
+/**
+ * Fire-and-forget admin notification sent to ADMIN_EMAIL on every new
+ * registration. Failures are swallowed — never block the user response.
+ */
+export async function sendRegistrationNotification(
+  args: SendRegistrationNotificationArgs,
+): Promise<void> {
+  const { agentName, normieId, targetUrl, ownerWallet, method, resendApiKey } = args;
+  const subdomain = `${agentName}.normieagent.com`;
+  const subject = `New registration: ${subdomain}`;
+  const text = [
+    `Subdomain : ${subdomain}`,
+    `Normie    : #${normieId}`,
+    `Target    : ${targetUrl}`,
+    `Wallet    : ${ownerWallet}`,
+    `Method    : ${method}`,
+    `Time      : ${new Date().toUTCString()}`,
+  ].join("\n");
+
+  await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${resendApiKey}`,
+    },
+    body: JSON.stringify({
+      from: RESEND_FROM,
+      to: [ADMIN_EMAIL],
+      subject,
+      text,
+    }),
+  });
 }
 
 function escapeHtml(value: string): string {

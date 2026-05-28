@@ -10,6 +10,7 @@ import {
   parseAuthMessage,
   verifyAuthSignature,
 } from "../auth.js";
+import { sendRegistrationNotification } from "../email.js";
 import {
   createInfuraClient,
   fetchAgentBinding,
@@ -156,6 +157,15 @@ export async function handleRegister(
   await env.AGENT_ROUTES_KV.put(agentRouteKey(agentName), targetUrl, {
     expirationTtl: ROUTE_CACHE_TTL_SECONDS,
   });
+
+  sendRegistrationNotification({
+    agentName,
+    normieId,
+    targetUrl,
+    ownerWallet: recovered.toLowerCase(),
+    method: "wallet-sign",
+    resendApiKey: env.RESEND_API_KEY,
+  }).catch(() => {});
 
   return json(
     { agentName, normieId, targetUrl, subdomain: `${agentName}.normieagent.com` },
